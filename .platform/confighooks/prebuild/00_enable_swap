@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -ex
+
+if grep -E 'SwapTotal:\s+0+\s+kB' /proc/meminfo; then
+    echo "Positively identified no swap space, creating some."
+    dd if=/dev/zero of=/var/swapfile bs=1M count=1024
+    chmod 0600 /var/swapfile
+    /sbin/mkswap /var/swapfile
+    /sbin/swapon /var/swapfile
+else
+    echo "Did not confirm zero swap space, doing nothing."
+    grep -e 'SwapTotal:' /proc/meminfo
+fi

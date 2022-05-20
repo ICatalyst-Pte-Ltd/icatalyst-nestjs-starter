@@ -1,0 +1,4 @@
+coverage/
+dist/
+docs/*.postman_collection.json
+venv/
