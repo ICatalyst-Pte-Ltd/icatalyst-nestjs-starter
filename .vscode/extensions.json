@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "ms-azuretools.vscode-docker",
+    "editorconfig.editorconfig",
+    "esbenp.prettier-vscode",
+    "prisma.prisma",
+    "dbaeumer.vscode-eslint",
+    "mikestead.dotenv",
+    "gitlab.gitlab-workflow"
+  ]
+}

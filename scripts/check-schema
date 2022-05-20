@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+echo 'Applying existing migrations ...'
+npx prisma migrate deploy
+printf 'Checking Prisma Schema ...'
+npx prisma migrate diff \
+    --from-migrations ./prisma/migrations \
+    --to-schema-datamodel ./prisma/schema.prisma \
+    --shadow-database-url "$DATABASE_URL" \
+    --exit-code
