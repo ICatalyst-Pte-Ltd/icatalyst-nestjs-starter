@@ -1,0 +1,270 @@
+workflow:
+  rules:
+    # A merge request, run a merge request pipeline.
+    # For example, a merge request pipeline can be triggered by a push to a branch with an associated open merge request.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # A change to a branch, but a merge request is open for that branch, do not run a branch pipeline.
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    # A change to a branch, but without any open merge requests, run a branch pipeline.
+    - if: $CI_COMMIT_BRANCH
+
+# You can override the included template(s) by including variable overrides
+# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
+# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
+include:
+  - template: Code-Quality.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+# Override the rules so that this job also runs for pipelines for merge requests
+code_quality:
+  rules:
+    - if: $CODE_QUALITY_DISABLED
+      when: never
+    # - if: $CI_COMMIT_TAG || $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_IID
+
+# Override the rules so that this job also runs for pipelines for merge requests
+eslint-sast:
+  rules:
+    - if: $SAST_DISABLED
+      when: never
+    - if: $SAST_EXCLUDED_ANALYZERS =~ /eslint/
+      when: never
+    # - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_IID
+      exists:
+        - '**/*.html'
+        - '**/*.js'
+        - '**/*.jsx'
+        - '**/*.ts'
+        - '**/*.tsx'
+
+# Override the rules so that this job also runs for pipelines for merge requests
+nodejs-scan-sast:
+  rules:
+    - if: $SAST_DISABLED
+      when: never
+    - if: $SAST_EXCLUDED_ANALYZERS =~ /nodejs-scan/
+      when: never
+    # - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_IID
+      exists:
+        - '**/package.json'
+
+# Override the rules so that this job also runs for pipelines for merge requests
+semgrep-sast:
+  rules:
+    - if: $SAST_DISABLED
+      when: never
+    - if: $SAST_EXCLUDED_ANALYZERS =~ /semgrep/
+      when: never
+    # - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_IID
+      exists:
+        - '**/*.py'
+        - '**/*.js'
+        - '**/*.jsx'
+        - '**/*.ts'
+        - '**/*.tsx'
+        - '**/*.c'
+        - '**/*.go'
+
+# Override the rules so that this job also runs for pipelines for merge requests
+secret_detection:
+  rules:
+    - if: $SECRET_DETECTION_DISABLED
+      when: never
+    # - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_IID
+
+.test:
+  before_script:
+    - node --version
+    - npm --version
+    - npm install
+  cache:
+    key:
+      files:
+        - package.json
+        - package-lock.json
+    paths:
+      - node_modules/
+  image: node:latest
+
+unit-test:
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+      junit:
+        - junit.xml
+    when: always
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  extends:
+    - .test
+  script:
+    - npm run test:cov
+  variables:
+    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tests?schema=public
+
+e2e-test:
+  extends:
+    - .test
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_MERGE_REQUEST_IID
+  services:
+    - postgres:alpine
+    - alias: elasticsearch
+      name: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+  script:
+    - npx prisma generate
+    - npx prisma migrate deploy
+    - npm run test:e2e
+  variables:
+    APP_NAME: test-app
+    APP_REGISTRATION_TOKEN: token
+    APP_REGISTRATION_URL: http://localhost:9000
+    APP_URL: http://localhost:3000
+    DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+    ELASTIC_PASSWORD: ${ELASTICSEARCH_PASSWORD}
+    ELASTICSEARCH_PASSWORD: changeme
+    ELASTICSEARCH_URL: http://elasticsearch:9200
+    ELASTICSEARCH_USERNAME: elastic
+    ES_JAVA_OPTS: '-Xms256m -Xmx256m'
+    ES_SETTING_DISCOVERY_TYPE: single-node
+    ES_SETTING_NETWORK_HOST: 0.0.0.0
+    ES_SETTING_XPACK_LICENSE_SELF__GENERATED_TYPE: basic
+    ES_SETTING_XPACK_SECURITY_ENABLED: 'true'
+    POSTGRES_DB: test_db
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_USER: postgres
+
+docker-build:
+  before_script:
+    - docker version
+    - docker compose version
+  image: registry.gitlab.com/icatalyst/docker-images/docker-compose_cli-compose:docker20.10.12-compose_cli1.0.17-compose2.2.2
+  rules:
+    - exists:
+        - Dockerfile
+        - ./elasticsearch/Dockerfile
+      if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_MERGE_REQUEST_IID
+  script:
+    - DOCKER_REGISTRY=${DOCKER_REGISTRY:+${DOCKER_REGISTRY}/}
+    - PACKAGE_VERSION=$(grep '"version":' package.json | cut -d \" -f 4)
+    - APP_IMAGE_NAME=${DOCKER_REGISTRY}${APP_IMAGE_NAME}
+    - docker build
+      --build-arg "BUILD_VERSION=$PACKAGE_VERSION"
+      --build-arg "COMMIT_SHA=$CI_COMMIT_SHA"
+      --build-arg "COMMIT_TIME=$CI_COMMIT_TIMESTAMP"
+      --build-arg "GIT_BRANCH=$CI_COMMIT_BRANCH"
+      --build-arg "PIPELINE_ID=$CI_PIPELINE_ID"
+      --build-arg "PIPELINE_INTERNAL_ID=$CI_PIPELINE_IID"
+      --build-arg "PIPELINE_URL=$CI_PIPELINE_URL"
+      --file ./Dockerfile
+      --tag "$APP_IMAGE_NAME:latest"
+      --tag "$APP_IMAGE_NAME:$PACKAGE_VERSION"
+      .
+    - ELASTICSEARCH_IMAGE_TAG=${DOCKER_REGISTRY}cognitive-edge/elasticsearch:${ELASTICSEARCH_VERSION}
+    - docker build
+      --build-arg "VERSION=$ELASTICSEARCH_VERSION"
+      --file ./elasticsearch/Dockerfile
+      --tag "$ELASTICSEARCH_IMAGE_TAG"
+      ./elasticsearch
+    - docker image ls
+    - docker inspect "$APP_IMAGE_NAME:latest"
+  services:
+    - docker:20.10.12-dind
+  variables:
+    APP_IMAGE_NAME: cognitive-edge/capture-processor
+    ELASTICSEARCH_IMAGE_NAME: cognitive-edge/elasticsearch
+    DOCKER_TLS_CERTDIR: /certs
+
+.deployment:
+  before_script:
+    - python --version
+    - python -m venv venv
+    - source venv/bin/activate
+    - python -m pip install --upgrade pip
+    - pip --version
+    - pip install awsebcli
+    - eb --version
+  image: python:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - eb init "$CI_PROJECT_NAME" --platform Docker --region "$AWS_REGION"
+    - PACKAGE_VERSION=$(grep '"version":' package.json | cut -d \" -f 4)
+    # - envsubst < .ebextensions/env.yml > .ebextensions/env.config
+    - sed
+      --expression 's|${PACKAGE_VERSION}|'"$PACKAGE_VERSION"'|g'
+      --expression 's|${CI_PIPELINE_ID}|'"$CI_PIPELINE_ID"'|g'
+      --expression 's|${CI_PIPELINE_IID}|'"$CI_PIPELINE_IID"'|g'
+      --expression 's|${CI_PIPELINE_URL}|'"$CI_PIPELINE_URL"'|g'
+      --expression 's|${CI_COMMIT_BRANCH}|'"$CI_COMMIT_BRANCH"'|g'
+      --expression 's|${CI_COMMIT_SHA}|'"$CI_COMMIT_SHA"'|g'
+      --expression 's|${CI_COMMIT_TIMESTAMP}|'"'$CI_COMMIT_TIMESTAMP'"'|g'
+      .ebextensions/env.yml > .ebextensions/env.config
+    - eb deploy --timeout 15 "$ENVIRONMENT_NAME"
+  stage: deploy
+
+deploy-to-staging:
+  extends: .deployment
+  variables:
+    AWS_REGION: ap-southeast-1
+    ENVIRONMENT_NAME: sgdev-cp-eb
+
+deploy-to-ca:
+  extends: .deployment
+  needs:
+    - deploy-to-staging
+  variables:
+    AWS_REGION: ca-central-1
+    ENVIRONMENT_NAME: calive-cp-eb
+
+deploy-to-us:
+  extends: .deployment
+  needs:
+    - deploy-to-staging
+  variables:
+    AWS_REGION: us-east-1
+    ENVIRONMENT_NAME: uslive-cp-eb
+
+deploy-to-lon:
+  extends: .deployment
+  needs:
+    - deploy-to-staging
+  variables:
+    AWS_REGION: eu-west-2
+    ENVIRONMENT_NAME: lonlive-cp-eb
+
+deploy-to-eu:
+  extends: .deployment
+  needs:
+    - deploy-to-staging
+  variables:
+    AWS_REGION: eu-west-1
+    ENVIRONMENT_NAME: eulive-cp-eb
+
+deploy-to-sg:
+  extends: .deployment
+  needs:
+    - deploy-to-staging
+  variables:
+    AWS_REGION: ap-southeast-1
+    ENVIRONMENT_NAME: sglive-cp-eb
+
+deploy-to-au:
+  extends: .deployment
+  needs:
+    - deploy-to-staging
+  variables:
+    AWS_REGION: ap-southeast-2
+    ENVIRONMENT_NAME: aulive-cp-eb

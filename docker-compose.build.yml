@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      args:
+        BUILD_VERSION: ${BUILD_VERSION}
+        PIPELINE_ID: ${PIPELINE_ID}
+        PIPELINE_INTERNAL_ID: ${PIPELINE_INTERNAL_ID}
+        PIPELINE_URL: ${PIPELINE_URL}
+        GIT_BRANCH: ${GIT_BRANCH}
+        COMMIT_SHA: ${COMMIT_SHA}
+        COMMIT_TIME: ${COMMIT_TIME}
+      context: .
