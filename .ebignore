@@ -1,0 +1,14 @@
+# ignore everything
+*
+# except the following
+!.ebextensions/*.config
+!.platform/
+!dist/
+!/prisma/
+!package-lock.json
+!package.json
+!Procfile
+
+# specifically ignore the node_modules
+# since EB CLI adds it to the source bundle
+node_modules/
