@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -ex
+
+/sbin/swapoff /var/swapfile
+rm /var/swapfile

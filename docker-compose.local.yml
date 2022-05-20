@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      target: build
+    command: bash -c "npx prisma migrate deploy && npm run start:debug"
+    environment:
+      NODE_ENV: ${NODE_ENV}
+    ports:
+      # debugging port 9229
+      - published: 9229
+        target: 9229
+    volumes:
+      - type: bind
+        source: ./src
+        target: /build/src
+
+  database:
+    ports:
+      - published: ${DATABASE_PORT}
+        target: 5432

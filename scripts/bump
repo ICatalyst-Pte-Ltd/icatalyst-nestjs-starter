@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+echo "Updating dependency: $1"
+# first get dependency version from dependencies
+currentVersion=$(npm pkg get dependencies["$1"])
+if [ "$currentVersion" = '{}' ]; then
+    # get dependency version from devDependencies
+    currentVersion=$(npm pkg get devDependencies["$1"])
+fi
+if [ "$currentVersion" = '{}' ]; then
+    # version not found in both dependencies and devDependencies
+    echo "$1 is not a direct dependency"
+    exit
+fi
+currentVersion=$(echo "$currentVersion" | grep --only-matching --extended-regexp '\d+\.\d+\.\d+')
+echo "Current version: $currentVersion"
+npm update --save "$1"
+git add package-lock.json package.json
+# first get dependency version from dependencies
+newVersion=$(npm pkg get dependencies["$1"])
+if [ "$newVersion" = '{}' ]; then
+    # get dependency version from devDependencies
+    newVersion=$(npm pkg get devDependencies["$1"])
+fi
+newVersion=$(echo "$newVersion" | grep --only-matching --extended-regexp '\d+\.\d+\.\d+')
+echo "New version: $newVersion"
+if [ "$newVersion" = "$currentVersion" ]; then
+    echo Version is the same!
+    exit
+fi
+message="chore: bump $1 from $currentVersion to $newVersion"
+echo "Using the commit message: \"$message\""
+git commit --message="$message"

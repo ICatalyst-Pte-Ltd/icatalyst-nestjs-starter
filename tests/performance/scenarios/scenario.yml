@@ -1,0 +1,8 @@
+scenarios:
+  - flow:
+      - get:
+          name: retrieve the details about the application
+          url: /info
+          expect:
+            - statusCode: 200
+            - contentType: json
