@@ -1,0 +1,25 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# git prepare-commit-msg hook to automatically add a JIRA issue key
+# (extracted from the current branch name) to commit messages.
+# See https://git-scm.com/docs/githooks#_prepare_commit_msg for more details.
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+# check if commit is merge commit or a commit amend
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "commit" ]; then
+    exit
+fi
+ISSUE_KEY=$(git branch --show-current | grep -o "[A-Z]\+-\d\+" || [ $? = 1 ])
+if [ "$ISSUE_KEY" = "" ]; then
+    # no issue key in branch, use the default message
+    exit
+fi
+# issue key matched from branch prefix, append to commit message if message
+# does not contain the issue key
+if grep "$ISSUE_KEY" "$COMMIT_MSG_FILE"; then
+  # the issue key is already in the message, so do nothing
+  exit
+fi
+printf '\n%s' "$ISSUE_KEY" >> "$COMMIT_MSG_FILE"
+exit

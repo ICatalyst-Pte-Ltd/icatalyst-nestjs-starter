@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      args:
+        BUILD_VERSION: ${BUILD_VERSION}
+        PIPELINE_ID: ${PIPELINE_ID}
+        PIPELINE_INTERNAL_ID: ${PIPELINE_INTERNAL_ID}
+        PIPELINE_URL: ${PIPELINE_URL}
+        GIT_BRANCH: ${GIT_BRANCH}
+        COMMIT_SHA: ${COMMIT_SHA}
+        COMMIT_TIME: ${COMMIT_TIME}
+      context: .
+    environment:
+      APP_NAME: ${APP_NAME}
+      APP_URL: ${APP_URL}
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@database:5432/${DATABASE_NAME}?schema=public
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      interval: 10s
+      retries: 3
+      start_period: 1s
+      test:
+        [
+          'CMD-SHELL',
+          'curl --fail --silent http://app:$APP_PORT/health || exit 1',
+        ]
+      timeout: 3s
+    # TODO change the image to a proper name
+    image: <image-name>:latest
+    networks:
+      - database
+    ports:
+      - published: ${APP_PORT}
+        target: 3000
+        x-aws-protocol: http
+
+  database:
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_USER: ${DATABASE_USER}
+    healthcheck:
+      interval: 10s
+      retries: 3
+      start_period: 1s
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready --username=$DATABASE_USER --dbname=$DATABASE_NAME',
+        ]
+      timeout: 3s
+    image: postgres:alpine
+    networks:
+      - database
+    volumes:
+      - type: volume
+        source: database-data
+        target: /var/lib/postgresql/data
+
+networks:
+  database:
+    # driver: bridge
+
+volumes:
+  database-data:
+    # driver: local

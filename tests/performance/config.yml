@@ -1,0 +1,22 @@
+config:
+  environments:
+    local:
+      target: http://localhost:3000
+  phases:
+    # - name: debug
+    #   arrivalCount: 1
+    #   duration: 1
+    - name: Warm up
+      arrivalRate: 5
+      duration: 60
+    - name: Ramp up load
+      arrivalRate: 10
+      duration: 120
+      rampTo: 20
+    - name: Sustained load
+      arrivalRate: 25
+      duration: 600
+  plugins:
+    apdex: {}
+    # ensure: {}
+    expect: {}

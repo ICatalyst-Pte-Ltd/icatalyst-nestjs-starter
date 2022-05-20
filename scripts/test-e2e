@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# starts the database and elasticsearch
+docker compose --file docker-compose.yml --file docker-compose.local.yml up --detach --wait database
+
+# assuming that the DATABASE_URL is set in .env as follows:
+# DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?schema=public
+# Sets the database name to a different one so that it does not wipe existing data
+export DATABASE_NAME=tests
+
+# runs the migrations for the database
+npx prisma migrate deploy
+
+# runs the e2e tests
+npm run test:e2e
