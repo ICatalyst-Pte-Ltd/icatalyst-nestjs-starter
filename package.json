@@ -24,7 +24,7 @@
     "node": "^18.0.0 || ^20.0.0"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^7.17.0",
+    "@elastic/elasticsearch": "^7.17.14",
     "@nestjs/axios": "^3.0.0",
     "@nestjs/cache-manager": "^2.0.1",
     "@nestjs/common": "^10.0.4",
