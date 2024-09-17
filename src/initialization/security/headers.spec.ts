@@ -1,7 +1,8 @@
-import { Controller, Get, HttpServer } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import each from 'jest-each';
 import request from 'supertest';
+import { App } from 'supertest/types';
 import { setSecurityHeaders } from './headers';
 
 @Controller()
@@ -13,7 +14,7 @@ export class TestController {
 }
 
 describe('Security Headers', () => {
-  let server: HttpServer;
+  let server: App;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

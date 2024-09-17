@@ -1,6 +1,7 @@
-import { Controller, Get, HttpServer, Logger } from '@nestjs/common';
+import { Controller, Get, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { App } from 'supertest/types';
 import { setCors } from './cors';
 
 @Controller()
@@ -13,7 +14,7 @@ export class TestController {
 
 describe('CORS', () => {
   const env = { ...process.env };
-  let server: HttpServer;
+  let server: App;
 
   beforeEach(async () => {
     process.env = { ...env };
