@@ -21,7 +21,7 @@
     "prepare": "node --eval \"try { require('husky').install() } catch (error) { if (error.code !== 'MODULE_NOT_FOUND') throw error }\""
   },
   "engines": {
-    "node": "^16.0.0 || ^18.0.0"
+    "node": "^18.0.0 || ^20.0.0"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^7.17.0",
