@@ -1,2 +1,2 @@
-export { AjvModule } from './ajv.module';
-export { AjvService } from './ajv.service';
+export { AjvModule } from './ajv.module.js';
+export { AjvService } from './ajv.service.js';

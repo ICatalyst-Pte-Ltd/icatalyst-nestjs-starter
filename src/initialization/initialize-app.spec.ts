@@ -1,51 +1,64 @@
 import { INestApplication, Logger } from '@nestjs/common';
-import * as validator from './class-validator';
-import { initializeApp } from './initialize-app';
-import * as security from './security';
-import * as swagger from './swagger';
-import * as versioning from './versioning';
+import { initializeApp } from './initialize-app.js';
+
+const mocks = vi.hoisted(() => ({
+  enableSecurity: vi.fn(),
+  enableSwagger: vi.fn(),
+  enableVersioning: vi.fn(),
+  setupClassValidator: vi.fn(),
+}));
+
+vi.mock('./class-validator.js', () => ({
+  setupClassValidator: mocks.setupClassValidator,
+}));
+vi.mock('./security/index.js', () => ({
+  enableSecurity: mocks.enableSecurity,
+}));
+vi.mock('./swagger.js', () => ({
+  enableSwagger: mocks.enableSwagger,
+}));
+vi.mock('./versioning.js', () => ({
+  enableVersioning: mocks.enableVersioning,
+}));
 
 describe(initializeApp.name, () => {
   let app: INestApplication;
 
   beforeEach(() => {
     app = {} as INestApplication;
-    jest.spyOn(security, 'enableSecurity').mockImplementation();
-    jest.spyOn(versioning, 'enableVersioning').mockImplementation();
-    jest.spyOn(swagger, 'enableSwagger').mockImplementation();
-    jest.spyOn(validator, 'setupClassValidator').mockImplementation();
+    vi.clearAllMocks();
   });
 
   it('should call the respective functions with provided logger', () => {
-    const logger = { log: jest.fn() } as unknown as Logger;
+    const logger = { log: vi.fn() } as unknown as Logger;
 
     const result = initializeApp(app, logger);
 
     expect(result).toBe(app);
     expect(logger.log).toBeCalledWith('Initializing application');
-    expect(security.enableSecurity).toBeCalledWith(app, logger);
-    expect(versioning.enableVersioning).toBeCalledWith(app, logger);
-    expect(swagger.enableSwagger).toBeCalledWith(app, logger);
-    expect(validator.setupClassValidator).toBeCalledWith(app, logger);
+    expect(mocks.enableSecurity).toBeCalledWith(app, logger);
+    expect(mocks.enableVersioning).toBeCalledWith(app, logger);
+    expect(mocks.enableSwagger).toBeCalledWith(app, logger);
+    expect(mocks.setupClassValidator).toBeCalledWith(app, logger);
   });
 
   it('should call the respective functions with the default logger', () => {
-    Logger.prototype.log = jest.fn();
+    Logger.prototype.log = vi.fn();
 
     const result = initializeApp(app);
 
     expect(result).toBe(app);
 
     expect(Logger.prototype.log).toBeCalledWith('Initializing application');
-    expect(security.enableSecurity).toBeCalledWith(
+    expect(mocks.enableSecurity).toBeCalledWith(
       app,
       expect.objectContaining({ context: 'Initialization' }),
     );
-    expect(swagger.enableSwagger).toBeCalledWith(
+    expect(mocks.enableSwagger).toBeCalledWith(
       app,
       expect.objectContaining({ context: 'Initialization' }),
     );
-    expect(validator.setupClassValidator).toBeCalledWith(
+    expect(mocks.setupClassValidator).toBeCalledWith(
       app,
       expect.objectContaining({ context: 'Initialization' }),
     );

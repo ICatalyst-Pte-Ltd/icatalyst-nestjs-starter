@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { initializeApp } from './initialization';
-import { getLogLevels } from './logging';
+import { AppModule, ObserveInstrument } from './app.module.js';
+import { getLogLevels } from './common/logging.js';
+import { initializeApp } from './initialization/index.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    instrument: ObserveInstrument,
     logger: getLogLevels(),
   });
   initializeApp(app);

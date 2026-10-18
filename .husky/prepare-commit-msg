@@ -1,6 +1,3 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
 # git prepare-commit-msg hook to automatically add a JIRA issue key
 # (extracted from the current branch name) to commit messages.
 # See https://git-scm.com/docs/githooks#_prepare_commit_msg for more details.

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { EntityNotFoundException } from './exceptions';
+import { EntityNotFoundException } from './exceptions.js';
 
 describe(EntityNotFoundException.name, () => {
   it('should', () => {

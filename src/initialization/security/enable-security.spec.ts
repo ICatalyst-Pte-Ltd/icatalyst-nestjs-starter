@@ -1,14 +1,14 @@
 import { INestApplication, Logger } from '@nestjs/common';
-import { enableSecurity } from './index';
+import { enableSecurity } from './index.js';
 
 describe(enableSecurity.name, () => {
   it('should call the associated functions', () => {
     const app = {
-      enableCors: jest.fn(),
-      use: jest.fn(),
+      enableCors: vi.fn(),
+      use: vi.fn(),
     } as unknown as INestApplication;
     const logger = {
-      log: jest.fn(),
+      log: vi.fn(),
     } as unknown as Logger;
 
     const result = enableSecurity(app, logger);

@@ -1,1 +1,1 @@
-app: node dist/main
+app: node dist/main.js

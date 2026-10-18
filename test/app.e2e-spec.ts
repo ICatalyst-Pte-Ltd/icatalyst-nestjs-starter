@@ -1,14 +1,14 @@
 import { INestApplication, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { AppConfig } from '../src/app.config';
-import { AppModule } from '../src/app.module';
-import { PrismaService } from '../src/prisma';
+import { AppConfig } from '../src/app.config.js';
+import { AppModule } from '../src/app.module.js';
+import { PrismaService } from '../src/common/prisma/index.js';
 
-Logger.prototype.debug = jest.fn();
-Logger.prototype.error = jest.fn();
-Logger.prototype.log = jest.fn();
-Logger.prototype.warn = jest.fn();
+Logger.prototype.debug = vi.fn();
+Logger.prototype.error = vi.fn();
+Logger.prototype.log = vi.fn();
+Logger.prototype.warn = vi.fn();
 
 // NOTE: reuse the same instance of the PrismaService for all tests
 //  because the PrismaService also manages connections to the database

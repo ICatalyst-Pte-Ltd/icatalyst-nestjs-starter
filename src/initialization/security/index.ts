@@ -1,1 +1,1 @@
-export { enableSecurity } from './enable-security';
+export { enableSecurity } from './enable-security.js';

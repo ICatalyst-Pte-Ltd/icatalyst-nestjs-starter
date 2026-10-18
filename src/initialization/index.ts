@@ -1,1 +1,1 @@
-export { initializeApp } from './initialize-app';
+export { initializeApp } from './initialize-app.js';

@@ -1,8 +1,8 @@
 import { Controller, Get, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import type { Server } from 'node:http';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { setCors } from './cors';
+import { setCors } from './cors.js';
 
 @Controller()
 export class TestController {
@@ -14,7 +14,7 @@ export class TestController {
 
 describe('CORS', () => {
   const env = { ...process.env };
-  let server: App;
+  let server: Server;
 
   beforeEach(async () => {
     process.env = { ...env };
@@ -57,7 +57,7 @@ describe('CORS', () => {
 
   it('should return an error if CORS_ALLOWED_ORIGINS is undefined', async () => {
     delete process.env.CORS_ALLOWED_ORIGINS;
-    Logger.prototype.error = jest.fn();
+    Logger.prototype.error = vi.fn();
 
     const response = await request(server).get('/');
 

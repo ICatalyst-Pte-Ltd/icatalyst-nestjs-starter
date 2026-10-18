@@ -1,14 +1,13 @@
 import { INestApplication, Logger } from '@nestjs/common';
 import * as validator from 'class-validator';
 import { randomUUID } from 'node:crypto';
-import { AppModule } from '../app.module';
-import { setupClassValidator } from './class-validator';
+import { vi } from 'vitest';
+import { AppModule } from '../app.module.js';
+import { setupClassValidator } from './class-validator.js';
 
-// FIXME: a hack to allow the useContainer to be spied on by jest
-jest.mock('class-validator', () => {
+vi.mock('class-validator', async (importOriginal) => {
   return {
-    __esModule: true, // to enable jest to spy on
-    ...jest.requireActual('class-validator'),
+    ...(await importOriginal<typeof import('class-validator')>()),
   };
 });
 
@@ -19,13 +18,13 @@ describe(setupClassValidator.name, () => {
   beforeEach(() => {
     app = {} as INestApplication;
     logger = {} as Logger;
-    logger.log = jest.fn();
-    jest.spyOn(validator, 'useContainer').mockImplementation();
+    logger.log = vi.fn();
+    vi.spyOn(validator, 'useContainer').mockImplementation(() => {});
   });
 
   it('should set up class-validator', () => {
     const value = { id: randomUUID() };
-    app.select = jest.fn().mockReturnValue(value);
+    app.select = vi.fn().mockReturnValue(value);
 
     const result = setupClassValidator(app, logger);
 

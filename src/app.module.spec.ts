@@ -1,11 +1,11 @@
 import { ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppConfig } from './app.config';
-import { AppModule } from './app.module';
-import { HealthModule } from './health/health.module';
-import { InfoModule } from './info';
-import { PrismaModule } from './prisma/prisma.module';
-import { PrismaService } from './prisma/prisma.service';
+import { AppConfig } from './app.config.js';
+import { AppModule } from './app.module.js';
+import { HealthModule } from './common/health/health.module.js';
+import { InfoModule } from './common/info/index.js';
+import { PrismaModule } from './common/prisma/prisma.module.js';
+import { PrismaService } from './common/prisma/prisma.service.js';
 
 describe(AppModule.name, () => {
   let module: TestingModule;
