@@ -1,8 +1,11 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
-import { HealthModule } from './health';
-import { InfoModule } from './info';
-import { PrismaModule } from './prisma';
+import { HealthModule } from './common/health/index.js';
+import { InfoModule } from './common/info/index.js';
+import { PrismaModule } from './common/prisma/index.js';
+import { createObserveModule } from '@nestjs/observe';
+
+export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   // it seems that the order of the imports is important to determine the
@@ -11,6 +14,11 @@ import { PrismaModule } from './prisma';
     HealthModule,
     InfoModule,
     PrismaModule,
+    ObserveModule.forRoot({
+      appKey: process.env.OBSERVE_APP_KEY!,
+      appSecret: process.env.OBSERVE_APP_SECRET!,
+      serviceId: 'icatalyst-nestjs-starter',
+    }),
     // TODO: add your modules
   ],
   providers: [

@@ -1,8 +1,8 @@
 import { INestApplication, Logger } from '@nestjs/common';
-import { setupClassValidator } from './class-validator';
-import { enableSecurity } from './security';
-import { enableSwagger } from './swagger';
-import { enableVersioning } from './versioning';
+import { setupClassValidator } from './class-validator.js';
+import { enableSecurity } from './security/index.js';
+import { enableSwagger } from './swagger.js';
+import { enableVersioning } from './versioning.js';
 
 export function initializeApp(
   app: INestApplication,

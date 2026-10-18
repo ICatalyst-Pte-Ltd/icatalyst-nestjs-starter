@@ -1,9 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import each from 'jest-each';
+import type { Server } from 'node:http';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { setSecurityHeaders } from './headers';
+import { setSecurityHeaders } from './headers.js';
 
 @Controller()
 export class TestController {
@@ -14,7 +13,7 @@ export class TestController {
 }
 
 describe('Security Headers', () => {
-  let server: App;
+  let server: Server;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -27,14 +26,20 @@ describe('Security Headers', () => {
     server = app.getHttpServer();
   });
 
-  each`
-    header | value
-    ${'content-security-policy'} | ${"connect-src 'self';default-src 'none';frame-ancestors 'none';img-src 'self' data:;script-src-elem 'self';style-src 'self' 'sha256-/jDKvbQ8cdux+c5epDIqkjHbXDaIY8RucT1PmAe8FG4=' 'sha256-ezdv1bOGcoOD7FKudKN0Y2Mb763O6qVtM8LT2mtanIU=' 'sha256-eaPyLWVdqMc60xuz5bTp2yBRgVpQSoUggte1+40ONPU='"}
-    ${'strict-transport-security'} | ${'max-age=31536000; includeSubDomains'}
-    ${'x-content-type-options'} | ${'nosniff'}
-    ${'x-frame-options'} | ${'DENY'}
-    ${'x-xss-protection'} | ${'0'}
-  `.it(`should have "$header" set to "$value"`, ({ header, value }) => {
-    return request(server).get('/').expect(header, value);
+  it.each([
+    {
+      header: 'content-security-policy',
+      value:
+        "connect-src 'self';default-src 'none';frame-ancestors 'none';img-src 'self' data:;script-src-elem 'self';style-src 'self' 'sha256-/jDKvbQ8cdux+c5epDIqkjHbXDaIY8RucT1PmAe8FG4=' 'sha256-ezdv1bOGcoOD7FKudKN0Y2Mb763O6qVtM8LT2mtanIU=' 'sha256-eaPyLWVdqMc60xuz5bTp2yBRgVpQSoUggte1+40ONPU='",
+    },
+    {
+      header: 'strict-transport-security',
+      value: 'max-age=31536000; includeSubDomains',
+    },
+    { header: 'x-content-type-options', value: 'nosniff' },
+    { header: 'x-frame-options', value: 'DENY' },
+    { header: 'x-xss-protection', value: '0' },
+  ])('should have "$header" set to "$value"', async ({ header, value }) => {
+    await request(server).get('/').expect(header, value);
   });
 });

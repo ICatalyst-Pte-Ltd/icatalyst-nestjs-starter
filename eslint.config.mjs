@@ -13,8 +13,8 @@ export default [
   {
     rules: {
       'no-console': 'error',
-      '@typescript-eslint/explicit-module-boundary-types': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-module-boundary-types': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
     },
   },
 ];

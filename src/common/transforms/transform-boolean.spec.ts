@@ -1,5 +1,5 @@
 import { TransformFnParams } from 'class-transformer';
-import { toBoolean } from './transform-boolean';
+import { toBoolean } from './transform-boolean.js';
 
 describe(toBoolean.name, () => {
   it.each([

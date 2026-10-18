@@ -1,5 +1,5 @@
-import { randomBytes } from 'crypto';
-import { env } from './common';
+import { randomBytes } from 'node:crypto';
+import { env } from './common.js';
 
 const APP_NAME = 'APP_NAME';
 const APP_URL = 'APP_URL';

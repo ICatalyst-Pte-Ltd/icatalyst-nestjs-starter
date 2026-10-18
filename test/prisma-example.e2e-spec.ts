@@ -1,5 +1,5 @@
-import { Prisma, Example } from '@prisma/client';
-import { PrismaService } from '../src/prisma/prisma.service';
+import { Prisma, Example } from '~prisma';
+import { PrismaService } from '../src/common/prisma/prisma.service.js';
 
 // NOTE: this is a example e2e tests for the Example model
 describe('Example', () => {

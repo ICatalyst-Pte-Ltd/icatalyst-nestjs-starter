@@ -7,6 +7,7 @@
 !/prisma/
 !package-lock.json
 !package.json
+!prisma.config.ts
 !Procfile
 
 # specifically ignore the node_modules

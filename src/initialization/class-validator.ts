@@ -1,6 +1,6 @@
 import { INestApplication, Logger } from '@nestjs/common';
 import { useContainer } from 'class-validator';
-import { AppModule } from '../app.module';
+import { AppModule } from '../app.module.js';
 
 export function setupClassValidator(
   app: INestApplication,

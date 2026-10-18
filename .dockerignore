@@ -5,5 +5,6 @@
 !src/
 !package-lock.json
 !package.json
+!prisma.config.ts
 !tsconfig.build.json
 !tsconfig.json

@@ -1,2 +1,2 @@
-export { TransformBoolean } from './transform-boolean';
-export { TransformNumber } from './transform-number';
+export { TransformBoolean } from './transform-boolean.js';
+export { TransformNumber } from './transform-number.js';

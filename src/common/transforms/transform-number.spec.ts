@@ -1,5 +1,5 @@
 import { TransformFnParams } from 'class-transformer';
-import { toNumber } from './transform-number';
+import { toNumber } from './transform-number.js';
 
 describe(toNumber.name, () => {
   it('should transform to a number', () => {

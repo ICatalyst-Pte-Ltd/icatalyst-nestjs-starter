@@ -1,6 +1,6 @@
 import { INestApplication, Logger } from '@nestjs/common';
-import { setCors } from './cors';
-import { setSecurityHeaders } from './headers';
+import { setCors } from './cors.js';
+import { setSecurityHeaders } from './headers.js';
 
 export function enableSecurity(
   app: INestApplication,

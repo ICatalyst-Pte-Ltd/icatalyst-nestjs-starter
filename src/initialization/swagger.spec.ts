@@ -1,6 +1,6 @@
 import { INestApplication, Logger } from '@nestjs/common';
 import { OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
-import { enableSwagger } from './swagger';
+import { enableSwagger } from './swagger.js';
 
 describe(enableSwagger.name, () => {
   let app: INestApplication;
@@ -10,10 +10,10 @@ describe(enableSwagger.name, () => {
   beforeEach(() => {
     app = {} as INestApplication;
     logger = {} as Logger;
-    logger.log = jest.fn();
+    logger.log = vi.fn();
     document = {} as OpenAPIObject;
-    SwaggerModule.createDocument = jest.fn().mockReturnValue(document);
-    SwaggerModule.setup = jest.fn();
+    SwaggerModule.createDocument = vi.fn().mockReturnValue(document);
+    SwaggerModule.setup = vi.fn();
   });
 
   it('should initialize Swagger', () => {
