@@ -8,11 +8,13 @@ configTests(
     AWS_S3_BUCKET_NAME: 'storageName',
     AWS_S3_LOCATION: 'public',
     AWS_S3_CUSTOM_DOMAIN: '',
+    AWS_S3_FORCE_PATH_STYLE: 'true',
   },
   {
     bucketName: 'storageName',
     location: 'public',
     customDomain: DEFAULT_CUSTOM_DOMAIN,
+    forcePathStyle: true,
   },
   [
     {
@@ -50,6 +52,24 @@ configTests(
       },
       property: 'customDomain',
       variable: 'AWS_S3_CUSTOM_DOMAIN',
+    },
+    {
+      cases: {
+        error: [
+          {
+            description: 'is not a boolean',
+            expected: { message: 'must be a boolean' },
+            value: 'maybe',
+          },
+        ],
+        good: [
+          { expected: false, value: undefined },
+          { expected: false, value: '' },
+          { expected: false, value: 'false' },
+        ],
+      },
+      property: 'forcePathStyle',
+      variable: 'AWS_S3_FORCE_PATH_STYLE',
     },
   ],
 );

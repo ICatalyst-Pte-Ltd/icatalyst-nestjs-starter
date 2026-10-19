@@ -7,6 +7,7 @@ import {
   DeleteObjectCommandOutput,
   PutObjectOutput,
 } from '@aws-sdk/client-s3';
+import { S3Config } from './s3.config.js';
 import { S3Service } from './s3.service.js';
 import { mockClient } from 'aws-sdk-client-mock';
 import { Readable } from 'node:stream';
@@ -41,9 +42,22 @@ describe('S3Service', () => {
   let s3Service: S3Service;
 
   beforeEach(() => {
-    s3Service = new S3Service();
-    s3Mock.reset();
     vi.clearAllMocks();
+    s3Service = new S3Service({ forcePathStyle: false } as S3Config);
+    s3Mock.reset();
+  });
+
+  describe('constructor', () => {
+    it.each([true, false])(
+      '$#: should create the S3 client with forcePathStyle=%s',
+      (forcePathStyle) => {
+        vi.mocked(S3Client).mockClear();
+
+        new S3Service({ forcePathStyle } as S3Config);
+
+        expect(S3Client).toHaveBeenCalledWith({ forcePathStyle });
+      },
+    );
   });
 
   describe('upload', () => {
