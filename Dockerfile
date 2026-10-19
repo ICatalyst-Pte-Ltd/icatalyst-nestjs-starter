@@ -8,11 +8,14 @@ FROM base AS build
 ENV NODE_ENV=build
 WORKDIR /build
 COPY package*.json ./
+# Git hooks are not needed in the image and .husky/ is not in the build context
+RUN npm pkg delete scripts.prepare
 RUN --mount=type=cache,target=/root/.npm npm ci
 COPY nest-cli.json tsconfig.json tsconfig.build.json prisma.config.ts ./
 COPY prisma ./prisma
 COPY src ./src
-RUN npx prisma generate
+# prisma.config.ts requires DATABASE_URL, but generate does not connect to it
+RUN DATABASE_URL=postgresql://localhost/build npx prisma generate
 RUN npm run build
 
 FROM base
@@ -20,6 +23,7 @@ ENV NODE_ENV=production
 RUN apk add --no-cache tini
 WORKDIR /app
 COPY package*.json ./
+RUN npm pkg delete scripts.prepare
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 COPY --from=build /build/prisma.config.ts ./
 COPY --from=build /build/prisma ./prisma
