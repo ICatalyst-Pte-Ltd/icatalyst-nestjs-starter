@@ -4,7 +4,15 @@ services:
       target: build
     command: bash -c "npx prisma migrate deploy && npm run start:debug"
     environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_REGION: ${AWS_REGION}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      # routes the AWS SDK to LocalStack instead of AWS
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_S3_FORCE_PATH_STYLE: 'true'
       NODE_ENV: ${NODE_ENV}
+    networks:
+      - localstack
     ports:
       # debugging port 9229
       - published: 9229
@@ -19,7 +27,40 @@ services:
       - published: ${DATABASE_PORT:-5432}
         target: 5432
 
+  gotenberg:
+    ports:
+      - published: ${GOTENBERG_PORT:-4000}
+        target: 3000
+
+  localstack:
+    environment:
+      SERVICES: s3
+    healthcheck:
+      interval: 10s
+      retries: 3
+      start_period: 5s
+      test:
+        - CMD-SHELL
+        - curl --fail --silent http://localhost:4566/_localstack/health || exit 1
+      timeout: 3s
+    image: localstack/localstack:${LOCALSTACK_VERSION:-latest}
+    networks:
+      - localstack
+    ports:
+      - published: ${LOCALSTACK_PORT:-4566}
+        target: 4566
+    volumes:
+      - type: volume
+        source: localstack-data
+        target: /var/lib/localstack
+
   redis:
     ports:
       - published: ${REDIS_PORT:-6379}
         target: 6379
+
+networks:
+  localstack:
+
+volumes:
+  localstack-data:

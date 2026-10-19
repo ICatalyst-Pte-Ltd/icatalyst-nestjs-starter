@@ -172,7 +172,19 @@ CACHE_URL=redis://${REDIS_HOST}:${REDIS_PORT}
 
 Reusable building blocks are located in [src/common](./src/common).
 The `health` and `info` modules expose the `/health` and `/info` endpoints; other modules contribute to them by extending `AbstractHealthIndicator` and `AbstractInfo`.
-Optional modules such as `AWSModule` (S3 and Bedrock), `EmailModule` (SES), and `AbstractProxyService` are not imported by default; import them in the feature modules that need them and set their environment variables.
+Optional modules such as `AWSModule` (S3 and Bedrock), `EmailModule` (SES), `GotenbergModule` (PDF conversion), and `AbstractProxyService` are not imported by default; import them in the feature modules that need them and set their environment variables.
+
+### Gotenberg
+
+[Gotenberg](https://gotenberg.dev/) converts web pages and HTML documents to PDF through the `GotenbergService`.
+The Docker Compose files provide a `gotenberg` service, published on port `GOTENBERG_PORT` (default `4000`) locally.
+
+### LocalStack
+
+[LocalStack](https://www.localstack.cloud/) emulates S3 for local development.
+The [compose.local.yml](./compose.local.yml) file provides a `localstack` service and points the AWS SDK of the `app` service to it with `AWS_ENDPOINT_URL` and `AWS_S3_FORCE_PATH_STYLE`.
+When running the app outside of Docker, set `AWS_ENDPOINT_URL=http://localhost:4566` and `AWS_S3_FORCE_PATH_STYLE=true` instead.
+Buckets can be created with the AWS CLI, e.g. `aws --endpoint-url=http://localhost:4566 s3 mb s3://<bucket-name>`.
 
 ## Environment Variable(s)
 

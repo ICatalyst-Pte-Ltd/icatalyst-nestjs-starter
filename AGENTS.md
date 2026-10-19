@@ -33,7 +33,7 @@ Run in order: **`npm run lint`** → **`npm run test`** → **`npm run build`** 
 
 - NestJS 12 + Express, TypeScript, **ESM** (`"type": "module"`): relative imports must use the **`.js`** suffix (e.g. `./app.module.js`, `./common/prisma/index.js`).
 - PostgreSQL + **Prisma 7** (`prisma/schema.prisma`, `prisma.config.ts`); the generated client is in `src/generated/prisma` (git-ignored) and imported via the **`~prisma`** alias. Run `npx prisma generate` after schema changes.
-- Shared building blocks live in **`src/common/`**: `health` and `info` registries, `prisma` (`AbstractPrisma`, pagination, sorting), `cache`, `redis`, `bullmq`, `event-emitter`, `aws`, `email`, `proxy`, `interceptors`, `transforms`, `validations`, `regex`, `rxjs`, `testing`.
+- Shared building blocks live in **`src/common/`**: `health` and `info` registries, `prisma` (`AbstractPrisma`, pagination, sorting), `cache`, `redis`, `bullmq`, `event-emitter`, `aws`, `email`, `gotenberg`, `proxy`, `interceptors`, `transforms`, `validations`, `regex`, `rxjs`, `testing`.
 - Configuration classes (`*.config.ts`) validate environment variables with **Joi** via `validateEnv`; document new variables in `.env.sample`.
 - Health checks and info: extend `AbstractHealthIndicator` / `AbstractInfo` and register the provider in the feature module; `/health` and `/info` pick them up automatically.
 - Lint with **oxlint** (`oxlint.config.ts`), format with **Prettier**.
