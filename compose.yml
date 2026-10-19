@@ -35,7 +35,7 @@ services:
         - curl --fail --silent http://app:$APP_PORT/health || exit 1
       timeout: 3s
     # TODO change the image to a proper name
-    image: <image-name>:latest
+    image: icatalyst-nestjs-starter:latest
     networks:
       - database
       - gotenberg
