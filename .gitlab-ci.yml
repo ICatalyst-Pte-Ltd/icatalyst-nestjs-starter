@@ -51,18 +51,6 @@ container_scanning:
     CS_IMAGE: ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_IID}
 
 # Override the rules so that this job also runs for pipelines for merge requests
-nodejs-scan-sast:
-  rules:
-    - if: $SAST_DISABLED
-      when: never
-    - if: $SAST_EXCLUDED_ANALYZERS =~ /nodejs-scan/
-      when: never
-    # - if: $CI_COMMIT_BRANCH
-    - if: $CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_IID
-      exists:
-        - '**/package.json'
-
-# Override the rules so that this job also runs for pipelines for merge requests
 semgrep-sast:
   rules:
     - if: $SAST_DISABLED
@@ -91,13 +79,15 @@ secret_detection:
 stages:
   - test
   - release
-  - deploy
+  - deploy:staging
+  - verify
+  - deploy:production
 
 .node:
   before_script:
     - node --version
     - npm --version
-    - npm install
+    - npm ci
   cache:
     key:
       files:
@@ -105,7 +95,7 @@ stages:
         - package-lock.json
     paths:
       - node_modules/
-  image: node:lts
+  image: node:24
 
 unit-test:
   artifacts:
@@ -114,7 +104,7 @@ unit-test:
         coverage_format: cobertura
         path: coverage/cobertura-coverage.xml
       junit:
-        - junit.xml
+        - .vitest/junit/output.xml
     when: always
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   extends:
@@ -133,6 +123,7 @@ e2e-test:
     - if: $CI_MERGE_REQUEST_IID
   services:
     - postgres:alpine
+    - redis:alpine
   script:
     - npx prisma generate
     - npx prisma migrate deploy
@@ -140,10 +131,13 @@ e2e-test:
   variables:
     APP_NAME: $CI_PROJECT_PATH
     APP_URL: http://localhost:3000
+    CACHE_URL: redis://${REDIS_HOST}:${REDIS_PORT}
     DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
     POSTGRES_DB: test_database
     POSTGRES_PASSWORD: postgres
     POSTGRES_USER: postgres
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
 
 check-prisma-schema:
   extends:
@@ -204,18 +198,30 @@ docker-build:
   variables:
     APP_IMAGE_NAME: $CI_PROJECT_PATH
 
-release:
+.release:
   artifacts:
     paths:
       - dist/
   extends:
     - .node
+  script:
+    - npx prisma generate
+    - npm run build
+    - npx semantic-release ${CI_MERGE_REQUEST_IID:+--dry-run}
+
+test-release:
+  extends:
+    - .release
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+  stage: test
+
+release:
+  extends:
+    - .release
   resource_group: release
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  script:
-    - npm run build
-    - npx semantic-release
   stage: release
 
 .deployment:
@@ -227,15 +233,15 @@ release:
     - pip --version
     - pip install awsebcli
     - eb --version
-  image: python:latest
+  image: python:3.12
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
     - eb init "$CI_PROJECT_NAME" --platform node.js --region "$AWS_REGION"
-    - PACKAGE_VERSION=$(grep '"version":' package.json | cut -d \" -f 4)
+    - BUILD_VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
     # - envsubst < .ebextensions/env.yml > .ebextensions/env.config
     - sed
-      --expression 's|${PACKAGE_VERSION}|'"$PACKAGE_VERSION"'|g'
+      --expression 's|${BUILD_VERSION}|'"$BUILD_VERSION"'|g'
       --expression 's|${CI_PIPELINE_ID}|'"$CI_PIPELINE_ID"'|g'
       --expression 's|${CI_PIPELINE_IID}|'"$CI_PIPELINE_IID"'|g'
       --expression 's|${CI_PIPELINE_URL}|'"$CI_PIPELINE_URL"'|g'
@@ -243,21 +249,61 @@ release:
       --expression 's|${CI_COMMIT_SHA}|'"$CI_COMMIT_SHA"'|g'
       --expression 's|${CI_COMMIT_TIMESTAMP}|'"'$CI_COMMIT_TIMESTAMP'"'|g'
       .ebextensions/env.yml > .ebextensions/env.config
-    - eb deploy --timeout 15 "$ENVIRONMENT_NAME"
-  stage: deploy
+    - eb deploy --timeout 20 --verbose "$ENVIRONMENT_NAME"
 
 # TODO remove the dot to make the job visible
 # Deploys to a staging environment
 .deploy-to-staging:
+  environment:
+    deployment_tier: staging
+    name: staging
+    # TODO replace with proper URL
+    url: https://<e.g., app-staging.example.com>
   extends: .deployment
   needs:
     - release
   resource_group: deploy-staging
+  stage: deploy:staging
   variables:
     # TODO replace with proper region
     AWS_REGION: <e.g., ap-southeast-1>
     # TODO replace with proper environment name
-    ENVIRONMENT_NAME: <e.g., env-name >
+    ENVIRONMENT_NAME: <e.g., env-name>
+
+# TODO remove the dot to make the job visible
+# Checks the health of the staging environment
+.health-check:
+  image: curlimages/curl:latest
+  needs:
+    - .deploy-to-staging
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - |
+      HEALTH_URL="https://${ENVIRONMENT_URL}/health"
+      echo "Checking health endpoint at: $HEALTH_URL"
+      MAX_RETRIES=5
+      RETRY_DELAY=30
+      RETRY_COUNT=0
+      while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "$HEALTH_URL")
+        echo "Attempt $((RETRY_COUNT+1))/$MAX_RETRIES - Status: $HTTP_STATUS"
+        if [ "$HTTP_STATUS" -eq 200 ]; then
+          echo "Health check successful!"
+          exit 0
+        fi
+        RETRY_COUNT=$((RETRY_COUNT+1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+          echo "Waiting ${RETRY_DELAY}s before next attempt..."
+          sleep $RETRY_DELAY
+        fi
+      done
+      echo "Health check failed after $MAX_RETRIES attempts! Last status code: $HTTP_STATUS"
+      exit 1
+  stage: verify
+  variables:
+    # TODO replace with proper host name
+    ENVIRONMENT_URL: <e.g., app-staging.example.com>
 
 .load-testing:
   artifacts:
@@ -285,16 +331,22 @@ release:
     - /home/node/artillery/bin/run report
       --output reports/report.html
       reports/report.json
-  stage: deploy
+  stage: verify
 
 # TODO remove the dot to make the job visible
 # Deploys to a production environment
 .deploy-to-production:
+  environment:
+    deployment_tier: production
+    name: production
+    # TODO replace with proper URL
+    url: https://<e.g., app.example.com>
   extends: .deployment
   needs:
-    - release
-    - deploy-to-staging
+    - release # The release is necessary to inherit the dist directory.
+    - .health-check
   resource_group: deploy-production
+  stage: deploy:production
   variables:
     # TODO replace with proper region
     AWS_REGION: <e.g., ap-southeast-1>

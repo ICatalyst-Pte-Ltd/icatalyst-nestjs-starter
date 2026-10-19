@@ -1,5 +1,24 @@
-import { TransformFnParams } from 'class-transformer';
-import { toBoolean } from './transform-boolean.js';
+import { plainToInstance, TransformFnParams } from 'class-transformer';
+import { toBoolean, TransformBoolean } from './transform-boolean.js';
+
+describe(TransformBoolean.name, () => {
+  class TestDto {
+    @TransformBoolean()
+    readonly flag!: boolean;
+  }
+
+  it.each([
+    { value: 'yes', expected: true },
+    { value: 'no', expected: false },
+  ])(
+    '$#: should transform the property `$value` to $expected',
+    ({ value, expected }) => {
+      const result = plainToInstance(TestDto, { flag: value });
+
+      expect(result.flag).toBe(expected);
+    },
+  );
+});
 
 describe(toBoolean.name, () => {
   it.each([

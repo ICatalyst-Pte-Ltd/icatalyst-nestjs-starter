@@ -1,54 +1,43 @@
-import { ValidationPipe } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AppConfig } from './app.config.js';
 import { AppModule } from './app.module.js';
-import { HealthModule } from './common/health/health.module.js';
+import { BullMQModule } from './common/bullmq/index.js';
+import { CacheModule } from './common/cache/index.js';
+import { EventEmitterModule } from './common/event-emitter/index.js';
+import { HealthModule } from './common/health/index.js';
 import { InfoModule } from './common/info/index.js';
-import { PrismaModule } from './common/prisma/prisma.module.js';
-import { PrismaService } from './common/prisma/prisma.service.js';
+import { PrismaModule, PrismaService } from './common/prisma/index.js';
+import { PrismaConfig } from './common/prisma/prisma.config.js';
+import { moduleTests } from './common/testing/module-tests.utils.spec.js';
 
-describe(AppModule.name, () => {
-  let module: TestingModule;
-
-  beforeEach(async () => {
-    module = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(AppConfig)
-      .useValue({ name: 'app-name', url: 'https://localhost:3000' })
-      .overrideProvider(PrismaService)
-      .useValue({})
-      .compile();
-  });
-
-  describe(HealthModule.name, () => {
-    it('should be defined', () => {
-      const healthModule = module.get(HealthModule);
-
-      expect(healthModule).toBeDefined();
-    });
-  });
-
-  describe(InfoModule.name, () => {
-    it('should be defined', () => {
-      const infoModule = module.get(InfoModule);
-
-      expect(infoModule).toBeDefined();
-    });
-  });
-
-  describe(PrismaModule.name, () => {
-    it('should be defined', () => {
-      const prismaModule = module.get(PrismaModule);
-
-      expect(prismaModule).toBeDefined();
-    });
-  });
-
-  describe(ValidationPipe.name, () => {
-    it.skip('should be defined', () => {
-      // how to get ValidationPipe that is in global scope?
-      const validationPipe = module.get(ValidationPipe);
-
-      expect(validationPipe).toBeDefined();
-    });
-  });
-});
+moduleTests(
+  AppModule,
+  [
+    BullMQModule,
+    CacheModule,
+    EventEmitterModule,
+    HealthModule,
+    InfoModule,
+    PrismaModule,
+    // TODO: how to get ValidationPipe that is in global scope?
+    // ValidationPipe,
+  ],
+  {
+    beforeEachFn: async (builder) => {
+      return builder
+        .overrideProvider(AppConfig)
+        .useValue({ name: 'app-name', url: 'https://localhost:3000' })
+        .overrideProvider(CACHE_MANAGER)
+        .useValue({})
+        .overrideProvider(PrismaConfig)
+        .useValue({
+          url: 'postgresql://nestjs:password@localhost:5432/nestjs?schema=public',
+        })
+        .overrideProvider(PrismaService)
+        .useValue({});
+    },
+    afterEachFn: async (module) => {
+      await module.close();
+    },
+  },
+);

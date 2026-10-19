@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { forkJoin, map, Observable, of } from 'rxjs';
 import { AppConfig } from '../../app.config.js';
 import { env } from '../../common.js';
-import { Build, CI, Commit, Git, Info } from './entities/info.entity.js';
+import { Info } from './entities/info.entity.js';
+import { RegistryService } from './registry.service.js';
 
 const BUILD_VERSION = 'APP_INFO_BUILD_VERSION';
 const COMMIT_SHA = 'APP_INFO_GIT_COMMIT_SHA';
@@ -21,21 +24,57 @@ function envOrDefault(name: string) {
 
 @Injectable()
 export class InfoService {
-  constructor(private readonly config: AppConfig) {}
+  constructor(
+    private readonly config: AppConfig,
+    private readonly registry: RegistryService,
+  ) {}
 
-  getInfo(): Info {
-    const build = new Build(envOrDefault(BUILD_VERSION));
-    const ci = new CI(
-      envOrDefault(PIPELINE_ID),
-      envOrDefault(PIPELINE_INTERNAL_ID),
-      envOrDefault(PIPELINE_URL),
+  getInfo(): Observable<Info> {
+    const list = this.info();
+    // if the list is empty, use a list that contains one empty object
+    // because forkJoin require at least one element
+    return forkJoin(list.length === 0 ? [of({})] : list).pipe(
+      map((values) => {
+        const extensions = values.reduce((previous, current) => {
+          return { ...previous, ...current };
+        }, {});
+        const plain = {
+          build: { version: envOrDefault(BUILD_VERSION) },
+          ci: {
+            pipelineId: envOrDefault(PIPELINE_ID),
+            pipelineInternalId: envOrDefault(PIPELINE_INTERNAL_ID),
+            pipelineUrl: envOrDefault(PIPELINE_URL),
+          },
+          // extensions may contain values that class-transformer cannot
+          // reconstruct (e.g., errors with required constructor arguments)
+          extensions: {},
+          git: {
+            branch: envOrDefault(GIT_BRANCH),
+            commit: {
+              sha: envOrDefault(COMMIT_SHA),
+              time: envOrDefault(COMMIT_TIME),
+            },
+          },
+          name: this.config.name,
+          url: this.config.url,
+        } satisfies Info;
+        return Object.assign(plainToInstance(Info, plain), { extensions });
+      }),
     );
-    const commit = new Commit(
-      envOrDefault(COMMIT_SHA),
-      envOrDefault(COMMIT_TIME),
-    );
-    const git = new Git(envOrDefault(GIT_BRANCH), commit);
-    const info = new Info(build, ci, git, this.config.name, this.config.url);
-    return info;
+  }
+
+  /**
+   * Retrieve the info for all registered {@link InfoExtension}s.
+   *
+   * @returns a list of info from all registered {@link InfoExtension}s.
+   */
+  private info(): ReadonlyArray<Observable<Record<string, unknown>>> {
+    return this.registry.list().map((extension) => {
+      return extension.info().pipe(
+        map((info) => {
+          return { [extension.name]: info };
+        }),
+      );
+    });
   }
 }

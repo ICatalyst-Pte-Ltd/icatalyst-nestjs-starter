@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ConflictException,
   HttpException,
   Logger,
   NotFoundException,
@@ -8,14 +8,18 @@ import { Prisma } from '~prisma/client.js';
 import { OperatorFunction, catchError } from 'rxjs';
 import { ErrorCodes, isErrorCode } from './utilities.js';
 
-type ErrorFactory = () => HttpException;
+type ErrorFactory = (
+  error: Prisma.PrismaClientKnownRequestError,
+) => HttpException;
 
 type ErrorFactories = {
   [key in ErrorCodes]: ErrorFactory;
 };
 
 const defaultFactories: ErrorFactories = {
-  [`${ErrorCodes.P2002}`]: () => new BadRequestException(),
+  [`${ErrorCodes.P2002}`]: (error) =>
+    new ConflictException(`Unique constraint violation: ${error.meta?.target}`),
+  [`${ErrorCodes.P2017}`]: () => new NotFoundException(),
   [`${ErrorCodes.P2025}`]: () => new NotFoundException(),
 };
 
@@ -41,7 +45,7 @@ export function handlePrismaErrors<T>(
     ) {
       const factory = factories[error.code];
       if (factory != undefined) {
-        throw factory();
+        throw factory(error);
       }
     }
     logger.error({ method: handlePrismaErrors.name, error });

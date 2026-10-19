@@ -18,3 +18,8 @@ services:
     ports:
       - published: ${DATABASE_PORT:-5432}
         target: 5432
+
+  redis:
+    ports:
+      - published: ${REDIS_PORT:-6379}
+        target: 6379

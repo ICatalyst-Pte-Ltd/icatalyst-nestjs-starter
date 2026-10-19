@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ConflictException,
   ImATeapotException,
   Logger,
   NotFoundException,
@@ -18,7 +18,11 @@ describe(handlePrismaErrors.name, () => {
   it.each([
     {
       code: 'P2002',
-      ExpectedError: BadRequestException,
+      ExpectedError: ConflictException,
+    },
+    {
+      code: 'P2017',
+      ExpectedError: NotFoundException,
     },
     {
       code: 'P2025',
@@ -44,6 +48,7 @@ describe(handlePrismaErrors.name, () => {
 
   it.each([
     { code: 'P2002', error: new ImATeapotException() },
+    { code: 'P2017', error: new ImATeapotException() },
     { code: 'P2025', error: new ImATeapotException() },
   ])(
     '$#: should replace the Prisma error (code = $code) with the $error.name',
@@ -62,6 +67,24 @@ describe(handlePrismaErrors.name, () => {
       );
     },
   );
+
+  it('should rethrow the Prisma error if the factory is removed', async () => {
+    logger.error = vi.fn();
+    const error = new Prisma.PrismaClientKnownRequestError('message', {
+      clientVersion: 'clientVersion',
+      code: 'P2002',
+    });
+
+    const observable = throwError(() => error).pipe(
+      handlePrismaErrors({ P2002: undefined }, logger),
+    );
+
+    await expect(firstValueFrom(observable)).rejects.toBe(error);
+    expect(logger.error).toHaveBeenCalledWith({
+      method: handlePrismaErrors.name,
+      error,
+    });
+  });
 
   it('should handle unknown errors', async () => {
     logger.error = vi.fn();

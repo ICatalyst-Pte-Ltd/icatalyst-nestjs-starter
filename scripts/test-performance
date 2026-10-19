@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+directory=tests/performance
+config_file=$directory/config.yml
+environment=$1
+if [ -z "$environment" ]; then
+    echo Please provide an environment
+    exit 1
+fi
+scenario=$2
+if [ -z "$scenario" ]; then
+    echo Please provide a scenario
+    exit 1
+fi
+scenario_file=$directory/scenarios/$scenario.yml
+json_file=$environment-$scenario.json
+html_file=$environment-$scenario.html
+
+set -x
+
+npx artillery run --config "$config_file" --environment "$environment" --output "$json_file" "$scenario_file" \
+    && npx artillery report --output "$html_file" "$json_file"

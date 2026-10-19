@@ -46,6 +46,8 @@ describe(enableSwagger.name, () => {
         tags: [],
       }),
     );
-    expect(SwaggerModule.setup).toBeCalledWith('api', app, document);
+    expect(SwaggerModule.setup).toBeCalledWith('api', app, document, {
+      swaggerOptions: { tagsSorter: 'alpha' },
+    });
   });
 });

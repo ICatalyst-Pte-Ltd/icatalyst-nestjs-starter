@@ -12,5 +12,7 @@ datasource db {
 
 // TODO: add your database models here
 model Example {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

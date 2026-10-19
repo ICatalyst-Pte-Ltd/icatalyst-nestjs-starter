@@ -1,53 +1,33 @@
-import { HealthIndicatorService } from '@nestjs/terminus';
 import { Test } from '@nestjs/testing';
+import { HealthIndicatorsService } from '../health/index.js';
 import { PrismaHealthIndicator } from './prisma.health.js';
-import { PrismaService } from './prisma.service.js';
 
-describe(`${PrismaHealthIndicator.name}`, () => {
+describe(PrismaHealthIndicator.name, () => {
   let healthIndicator: PrismaHealthIndicator;
-  let prisma: PrismaService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
         PrismaHealthIndicator,
-        HealthIndicatorService,
-        {
-          provide: PrismaService,
-          useValue: {},
-        },
+        { provide: HealthIndicatorsService, useValue: { register: vi.fn() } },
       ],
     }).compile();
     healthIndicator = module.get(PrismaHealthIndicator);
-    prisma = module.get(PrismaService);
   });
 
   it('should be defined', () => {
     expect(healthIndicator).toBeDefined();
+    expect(healthIndicator.name).toBe('database');
   });
 
-  describe('pingCheck', () => {
-    it('should be okay when connected to database', async () => {
-      prisma.$queryRaw = vi.fn().mockReturnValue({ result: 'some result' });
-
-      const result = await healthIndicator.pingCheck();
-
-      expect(result).toEqual({ database: { status: 'up' } });
-      expect(prisma.$queryRaw).toHaveBeenCalledWith(['SELECT 1;']);
-    });
-
-    it('should return a down status when the database check fails', async () => {
-      prisma.$queryRaw = vi.fn().mockImplementation(() => {
-        throw new Error('some error');
-      });
-
-      const result = await healthIndicator.pingCheck();
+  describe(PrismaHealthIndicator.prototype.check.name, () => {
+    it('should be okay', () => {
+      const result = healthIndicator.check();
 
       expect(result).toEqual({
         database: {
-          status: 'down',
-          message: 'Database check failed',
-          error: 'some error',
+          message: 'See /info endpoint for more details',
+          status: 'up',
         },
       });
     });

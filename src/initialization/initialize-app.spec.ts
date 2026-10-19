@@ -1,13 +1,18 @@
-import { INestApplication, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { initializeApp } from './initialize-app.js';
 
 const mocks = vi.hoisted(() => ({
   enableSecurity: vi.fn(),
   enableSwagger: vi.fn(),
   enableVersioning: vi.fn(),
+  initializeJsonParser: vi.fn(),
   setupClassValidator: vi.fn(),
 }));
 
+vi.mock('./body-parser.js', () => ({
+  initializeJsonParser: mocks.initializeJsonParser,
+}));
 vi.mock('./class-validator.js', () => ({
   setupClassValidator: mocks.setupClassValidator,
 }));
@@ -22,10 +27,10 @@ vi.mock('./versioning.js', () => ({
 }));
 
 describe(initializeApp.name, () => {
-  let app: INestApplication;
+  let app: NestExpressApplication;
 
   beforeEach(() => {
-    app = {} as INestApplication;
+    app = {} as NestExpressApplication;
     vi.clearAllMocks();
   });
 
@@ -40,6 +45,7 @@ describe(initializeApp.name, () => {
     expect(mocks.enableVersioning).toBeCalledWith(app, logger);
     expect(mocks.enableSwagger).toBeCalledWith(app, logger);
     expect(mocks.setupClassValidator).toBeCalledWith(app, logger);
+    expect(mocks.initializeJsonParser).toBeCalledWith(app, logger);
   });
 
   it('should call the respective functions with the default logger', () => {
@@ -59,6 +65,10 @@ describe(initializeApp.name, () => {
       expect.objectContaining({ context: 'Initialization' }),
     );
     expect(mocks.setupClassValidator).toBeCalledWith(
+      app,
+      expect.objectContaining({ context: 'Initialization' }),
+    );
+    expect(mocks.initializeJsonParser).toBeCalledWith(
       app,
       expect.objectContaining({ context: 'Initialization' }),
     );

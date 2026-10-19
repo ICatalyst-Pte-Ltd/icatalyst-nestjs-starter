@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-docker compose --file docker-compose.yml build "$@"
+docker compose --file compose.yml build "$@"

@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-docker compose --file docker-compose.yml --file docker-compose.local.yml run --rm "$@"
+docker compose --file compose.yml --file compose.local.yml run --rm "$@"

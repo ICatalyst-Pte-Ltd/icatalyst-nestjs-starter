@@ -9,18 +9,14 @@ This project was initialized with the following command to scaffold a [Nest](htt
 npx @nestjs/cli new --directory . <project-name>
 ```
 
-Static code analysis is done by [ESLint](https://eslint.org/) and code formatting is done by [Prettier](https://prettier.io/).
+Static code analysis is done by [Oxlint](https://oxc.rs/docs/guide/usage/linter) and code formatting is done by [Prettier](https://prettier.io/).
+Tests are written with [Vitest](https://vitest.dev/).
 These tools are used automatically to check the code using [Git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) set up by [husky](https://typicode.github.io/husky/#/) and [lint-staged](https://github.com/okonet/lint-staged).
-The tools were installed using following command.
-
-```shell
-npx mrm@2 lint-staged
-```
 
 Three Git hooks are provided: [commit-msg](./.husky/commit-msg), [pre-commit](./.husky/pre-commit), and [prepare-commit-msg](./.husky/prepare-commit-msg).
 The [commit-msg](./.husky/commit-msg) hook uses the [commitlint](https://github.com/conventional-changelog/commitlint) tool to lint commit messages according to the [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
-The configuration of the tool is located in the [.commitlintrc.yml](./.commitlintrc.yml) configuration file.
-The [pre-commit](./.husky/pre-commit) hook automatically formats files according to the configuration specified in the [.lintstagedrc.yml](./.lintstagedrc.yml) file.
+The configuration of the tool is located in the [commitlint.config.ts](./commitlint.config.ts) configuration file.
+The [pre-commit](./.husky/pre-commit) hook automatically lints and formats staged files according to the configuration specified in the [lint-staged.config.ts](./lint-staged.config.ts) file.
 The [prepare-commit-msg](./.husky/prepare-commit-msg) hook automatically appends a [JIRA](https://www.atlassian.com/software/jira) issue number to the commit message if the branch name that contains the `[A-Z]\+-\d\+` regular expression.
 
 ## Usage
@@ -54,7 +50,7 @@ npm run start:prod
 ```
 
 This project is also configured to run using [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/).
-Docker Compose files are provided ([docker-compose.yml](./docker-compose.yml) and [docker-compose.local.yml](./docker-compose.local.yml)) that can be used to run this project using Docker.
+Docker Compose files are provided ([compose.yml](./compose.yml) and [compose.local.yml](./compose.local.yml)) that can be used to run this project using Docker.
 A convenience script ([up](./scripts/up)) is provided to start this project as follows.
 
 ```shell
@@ -145,8 +141,8 @@ When developing Prisma models for PostgreSQL, further details on the type mappin
 #### Environment Variable(s)
 
 There are five database environment variables and one Prisma environment variable.
-The database environment variables are used in the [docker-compose.yml](./docker-compose.yml) file for the `database` service.
-And the Prisma environment variable is used in the Prisma schema file in the `env()`.
+The database environment variables are used in the [compose.yml](./compose.yml) file for the `database` service.
+And the Prisma environment variable is used in the [prisma.config.ts](./prisma.config.ts) file.
 
 ```dotenv
 # Database
@@ -159,24 +155,27 @@ DATABASE_USER=nestjs
 # Prisma
 DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?schema=public
 ```
+
+### Redis
+
+This project uses [Redis](https://redis.io/) for caching (`CacheModule`) and for queues via [BullMQ](https://docs.bullmq.io/) (`BullMQModule`).
+Both modules are configured in [src/common](./src/common) and imported in the [AppModule](./src/app.module.ts).
+The Docker Compose files provide a `redis` service.
+
+```dotenv
+REDIS_HOST=localhost
+REDIS_PORT=6379
+CACHE_URL=redis://${REDIS_HOST}:${REDIS_PORT}
+```
+
+## Common Modules
+
+Reusable building blocks are located in [src/common](./src/common).
+The `health` and `info` modules expose the `/health` and `/info` endpoints; other modules contribute to them by extending `AbstractHealthIndicator` and `AbstractInfo`.
+Optional modules such as `AWSModule` (S3 and Bedrock), `EmailModule` (SES), and `AbstractProxyService` are not imported by default; import them in the feature modules that need them and set their environment variables.
 
 ## Environment Variable(s)
 
-The following is a combined list of environment variables and example values.
-
-```dotenv
-# APP
-APP_NAME=app-name
-APP_PORT=3000
-APP_URL=http://localhost:3000
-
-# Database
-DATABASE_HOST=localhost
-DATABASE_NAME=nestjs
-DATABASE_PASSWORD=password
-DATABASE_PORT=5432
-DATABASE_USER=nestjs
-
-# Prisma
-DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?schema=public
-```
+The environment variables are validated on startup by the `*.config.ts` classes.
+See [.env.sample](./.env.sample) for the combined list of environment variables and example values.
+Copy it to `.env` to get started.
