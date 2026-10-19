@@ -1,33 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { AppConfig } from '../../app.config.js';
+import { moduleTests } from '../testing/module-tests.utils.spec.js';
 import { PrismaHealthIndicator } from './prisma.health.js';
+import { PrismaInfo } from './prisma.info.js';
 import { PrismaModule } from './prisma.module.js';
+import { PrismaConfig } from './prisma.config.js';
 import { PrismaService } from './prisma.service.js';
 
-describe(PrismaModule.name, () => {
-  let module: TestingModule;
-
-  beforeEach(async () => {
-    module = await Test.createTestingModule({
-      imports: [PrismaModule],
-    })
-      .overrideProvider(PrismaService)
+moduleTests(PrismaModule, [PrismaHealthIndicator, PrismaInfo, PrismaService], {
+  beforeEachFn(builder) {
+    return builder
+      .overrideProvider(AppConfig)
       .useValue({})
-      .compile();
-  });
-
-  describe(PrismaHealthIndicator.name, () => {
-    it('should be defined', () => {
-      const prismaHealthIndicator = module.get(PrismaHealthIndicator);
-
-      expect(prismaHealthIndicator).toBeDefined();
-    });
-  });
-
-  describe(PrismaService.name, () => {
-    it('should be defined', () => {
-      const prismaService = module.get(PrismaService);
-
-      expect(prismaService).toBeDefined();
-    });
-  });
+      .overrideProvider(PrismaConfig)
+      .useValue({
+        url: 'postgresql://nestjs:password@localhost:5432/nestjs?schema=public',
+      })
+      .overrideProvider(PrismaService)
+      .useValue({});
+  },
 });

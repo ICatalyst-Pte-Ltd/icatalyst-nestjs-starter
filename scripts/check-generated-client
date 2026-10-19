@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+printf 'Checking generated Prisma client ...\n'
+npx prisma generate
+git diff --exit-code -- src/generated/prisma/

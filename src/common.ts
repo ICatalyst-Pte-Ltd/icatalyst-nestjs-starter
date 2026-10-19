@@ -1,4 +1,4 @@
-import { MissingEnvironmentVariableError } from './common/errors.js';
+import { MissingEnvironmentVariableError } from './common/errors/index.js';
 
 /**
  * Retrieve the value of an environment variable.

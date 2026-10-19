@@ -1,42 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { randomUUID } from 'node:crypto';
+import { firstValueFrom, of } from 'rxjs';
 import { AppConfig } from '../../app.config.js';
+import { Info } from './entities/info.entity.js';
+import { mockInfo } from './entities/info.entity.utils.spec.js';
 import { InfoService } from './info.service.js';
+import { RegistryService } from './registry.service.js';
+import { mockInfoExtension } from './registry.service.utils.spec.js';
 
-function buildInfo({
-  version = '1.0.0',
-  pipelineId = '1234',
-  pipelineInternalId = '1',
-  pipelineUrl = 'https://localhost/pipeline',
-  branch = 'branch',
-  sha = '123456790abcdef',
-  time = '2021-01-01T00:00:00+00:00',
-  name = 'app-name',
-  url = 'https://localhost:3000',
-}) {
-  return {
-    build: {
-      version,
-    },
-    ci: {
-      pipelineId,
-      pipelineInternalId,
-      pipelineUrl,
-    },
-    git: {
-      branch,
-      commit: {
-        sha,
-        time,
-      },
-    },
-    name,
-    url,
-  };
-}
-
-describe('InfoService', () => {
+describe(InfoService.name, () => {
   const env = { ...process.env };
   let service: InfoService;
+  let registry: RegistryService;
 
   beforeEach(async () => {
     process.env = { ...env };
@@ -47,10 +22,15 @@ describe('InfoService', () => {
           provide: AppConfig,
           useValue: { name: 'app-name', url: 'https://localhost:3000' },
         },
+        {
+          provide: RegistryService,
+          useValue: { list: vi.fn().mockReturnValue([]) },
+        },
       ],
     }).compile();
 
-    service = module.get<InfoService>(InfoService);
+    service = module.get(InfoService);
+    registry = module.get(RegistryService);
   });
 
   afterAll(() => {
@@ -61,9 +41,11 @@ describe('InfoService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getInfo', () => {
+  describe(InfoService.prototype.getInfo.name, () => {
+    let info: Info;
+
     beforeEach(() => {
-      const info = buildInfo({});
+      info = mockInfo({});
       process.env.APP_INFO_BUILD_VERSION = info.build.version;
       process.env.APP_INFO_CI_PIPELINE_ID = info.ci.pipelineId;
       process.env.APP_INFO_CI_PIPELINE_INTERNAL_ID = info.ci.pipelineInternalId;
@@ -73,122 +55,194 @@ describe('InfoService', () => {
       process.env.APP_INFO_GIT_COMMIT_TIME = info.git.commit.time;
     });
 
-    it('should return info', () => {
-      const info = service.getInfo();
+    it('should return info', async () => {
+      registry.list = vi.fn().mockReturnValue([]);
 
-      expect(info).toEqual(buildInfo({}));
+      const observable = service.getInfo();
+
+      const result = await firstValueFrom(observable);
+
+      expect(result).toEqual({
+        ...info,
+        name: 'app-name',
+        url: 'https://localhost:3000',
+      });
     });
 
-    it('should return replace build version with NA if undefined', () => {
+    it('should include the info from the extensions', async () => {
+      const values = [{ id: randomUUID() }, { id: randomUUID() }];
+      const extensions = values.map((value) =>
+        mockInfoExtension({ info: vi.fn().mockReturnValue(of(value)) }),
+      );
+      registry.list = vi.fn().mockReturnValue(extensions);
+
+      const observable = service.getInfo();
+
+      const result = await firstValueFrom(observable);
+
+      expect(result.extensions).toEqual(
+        extensions.reduce((previous, current, index) => {
+          return { ...previous, [current.name]: values[index] };
+        }, {}),
+      );
+    });
+
+    it('should keep the info from the extensions as is', async () => {
+      class RequiredArgumentError extends Error {
+        constructor({ code }: { code: string }) {
+          super(code);
+        }
+      }
+      const value = { error: new RequiredArgumentError({ code: 'P1001' }) };
+      const extension = mockInfoExtension({
+        info: vi.fn().mockReturnValue(of(value)),
+      });
+      registry.list = vi.fn().mockReturnValue([extension]);
+
+      const result = await firstValueFrom(service.getInfo());
+
+      expect(result).toBeInstanceOf(Info);
+      expect(result.extensions[extension.name]).toBe(value);
+    });
+
+    it('should return replace build version with NA if undefined', async () => {
       delete process.env.APP_INFO_BUILD_VERSION;
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ version: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.build.version).toEqual('NA');
     });
 
-    it('should return replace build version with NA if blank', () => {
+    it('should return replace build version with NA if blank', async () => {
       process.env.APP_INFO_BUILD_VERSION = '';
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ version: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.build.version).toEqual('NA');
     });
 
-    it('should return replace pipeline id with NA if undefined', () => {
+    it('should return replace pipeline id with NA if undefined', async () => {
       delete process.env.APP_INFO_CI_PIPELINE_ID;
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ pipelineId: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.ci.pipelineId).toEqual('NA');
     });
 
-    it('should return replace pipeline id with NA if blank', () => {
+    it('should return replace pipeline id with NA if blank', async () => {
       process.env.APP_INFO_CI_PIPELINE_ID = '';
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ pipelineId: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.ci.pipelineId).toEqual('NA');
     });
 
-    it('should return replace pipeline internal id with NA if undefined', () => {
+    it('should return replace pipeline internal id with NA if undefined', async () => {
       delete process.env.APP_INFO_CI_PIPELINE_INTERNAL_ID;
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ pipelineInternalId: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.ci.pipelineInternalId).toEqual('NA');
     });
 
-    it('should return replace pipeline internal id with NA if blank', () => {
+    it('should return replace pipeline internal id with NA if blank', async () => {
       process.env.APP_INFO_CI_PIPELINE_INTERNAL_ID = '';
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ pipelineInternalId: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.ci.pipelineInternalId).toEqual('NA');
     });
 
-    it('should return replace pipeline url with NA if undefined', () => {
+    it('should return replace pipeline url with NA if undefined', async () => {
       delete process.env.APP_INFO_CI_PIPELINE_URL;
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ pipelineUrl: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.ci.pipelineUrl).toEqual('NA');
     });
 
-    it('should return replace pipeline url with NA if blank', () => {
+    it('should return replace pipeline url with NA if blank', async () => {
       process.env.APP_INFO_CI_PIPELINE_URL = '';
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ pipelineUrl: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.ci.pipelineUrl).toEqual('NA');
     });
 
-    it('should return replace git branch with NA if undefined', () => {
+    it('should return replace git branch with NA if undefined', async () => {
       delete process.env.APP_INFO_GIT_BRANCH;
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ branch: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.git.branch).toEqual('NA');
     });
 
-    it('should return replace git branch with NA if blank', () => {
+    it('should return replace git branch with NA if blank', async () => {
       process.env.APP_INFO_GIT_BRANCH = '';
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ branch: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.git.branch).toEqual('NA');
     });
 
-    it('should return replace commit sha with NA if undefined', () => {
+    it('should return replace commit sha with NA if undefined', async () => {
       delete process.env.APP_INFO_GIT_COMMIT_SHA;
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ sha: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.git.commit.sha).toEqual('NA');
     });
 
-    it('should return replace commit sha with NA if blank', () => {
+    it('should return replace commit sha with NA if blank', async () => {
       process.env.APP_INFO_GIT_COMMIT_SHA = '';
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ sha: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.git.commit.sha).toEqual('NA');
     });
 
-    it('should return replace commit time with NA if undefined', () => {
+    it('should return replace commit time with NA if undefined', async () => {
       delete process.env.APP_INFO_GIT_COMMIT_TIME;
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ time: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.git.commit.time).toEqual('NA');
     });
 
-    it('should return replace commit time with NA if blank', () => {
+    it('should return replace commit time with NA if blank', async () => {
       process.env.APP_INFO_GIT_COMMIT_TIME = '';
 
-      const info = service.getInfo();
+      const observable = service.getInfo();
 
-      expect(info).toEqual(buildInfo({ time: 'NA' }));
+      const result = await firstValueFrom(observable);
+
+      expect(result.git.commit.time).toEqual('NA');
     });
   });
 });

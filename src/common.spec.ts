@@ -1,5 +1,5 @@
 import { env } from './common.js';
-import { MissingEnvironmentVariableError } from './common/errors.js';
+import { MissingEnvironmentVariableError } from './common/errors/index.js';
 
 describe('common', () => {
   describe(`${env.name}`, () => {

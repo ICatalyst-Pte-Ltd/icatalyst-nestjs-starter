@@ -1,8 +1,21 @@
 import { randomBytes } from 'node:crypto';
-import { env } from './common.js';
+import { Injectable } from '@nestjs/common';
+import Joi from 'joi';
+import { validateEnv } from './common/validations/index.js';
 
-const APP_NAME = 'APP_NAME';
-const APP_URL = 'APP_URL';
+interface Env {
+  APP_NAME: string;
+  APP_PORT: number;
+  APP_URL: string;
+}
+
+const schema = Joi.object<Env>({
+  APP_NAME: Joi.string().empty('').default(defaultName()),
+  APP_PORT: Joi.number().port().empty('').default(3000),
+  APP_URL: Joi.string()
+    .uri({ scheme: /https?/ })
+    .required(),
+});
 
 function defaultName(
   prefix = 'app',
@@ -12,9 +25,16 @@ function defaultName(
   return `${prefix}-${randomBytes(size).toString(encoding)}`;
 }
 
+@Injectable()
 export class AppConfig {
-  constructor(
-    public readonly name: string = env(APP_NAME, defaultName),
-    public readonly url: string = env(APP_URL),
-  ) {}
+  public readonly name: string;
+  public readonly port: number;
+  public readonly url: string;
+
+  constructor() {
+    const { APP_NAME, APP_PORT, APP_URL } = validateEnv(schema);
+    this.name = APP_NAME;
+    this.port = APP_PORT;
+    this.url = APP_URL;
+  }
 }

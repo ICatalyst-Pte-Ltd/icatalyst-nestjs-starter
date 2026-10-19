@@ -1,8 +1,9 @@
 # ignore everything
 *
-# except the following
+# except build inputs
 !prisma/
 !src/
+!nest-cli.json
 !package-lock.json
 !package.json
 !prisma.config.ts

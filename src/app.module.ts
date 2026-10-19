@@ -1,9 +1,12 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
+import { createObserveModule } from '@nestjs/observe';
+import { BullMQModule } from './common/bullmq/index.js';
+import { CacheModule } from './common/cache/index.js';
+import { EventEmitterModule } from './common/event-emitter/index.js';
 import { HealthModule } from './common/health/index.js';
 import { InfoModule } from './common/info/index.js';
 import { PrismaModule } from './common/prisma/index.js';
-import { createObserveModule } from '@nestjs/observe';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -11,6 +14,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
   // it seems that the order of the imports is important to determine the
   // order of onModuleInit and Swagger documentation
   imports: [
+    BullMQModule,
+    CacheModule,
+    EventEmitterModule,
     HealthModule,
     InfoModule,
     PrismaModule,
@@ -19,7 +25,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       appSecret: process.env.OBSERVE_APP_SECRET!,
       serviceId: 'icatalyst-nestjs-starter',
     }),
-    // TODO: add your modules
+    // TODO: add your modules; modules with controllers should be in alphabetical order
   ],
   providers: [
     {

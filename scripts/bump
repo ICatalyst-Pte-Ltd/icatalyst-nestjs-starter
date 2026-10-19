@@ -31,3 +31,4 @@ fi
 message="chore: bump $1 from $currentVersion to $newVersion"
 echo "Using the commit message: \"$message\""
 git commit --message="$message"
+npm outdated

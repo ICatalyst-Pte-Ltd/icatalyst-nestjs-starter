@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import type { CustomOrigin } from '@nestjs/common/internal';
 
-export function setCors(app: INestApplication) {
+export function setCors(app: INestApplication): void {
   const origin: CustomOrigin = (requestOrigin, callback) => {
     const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS;
     if (allowedOrigins == undefined) {

@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     coverage: {
       enabled: true,
+      exclude: ['src/generated/**', '**/*.utils.spec.ts'],
       reporter: [...(configDefaults.coverage.reporter ?? []), 'cobertura'],
       thresholds: {
         branches: 95,
@@ -13,11 +14,13 @@ export default defineConfig({
       },
     },
     environment: 'node',
-    exclude: [...configDefaults.exclude],
+    // *.utils.spec.ts files contain reusable test utilities, not tests
+    exclude: [...configDefaults.exclude, '**/*.utils.spec.ts'],
     globals: true,
     include: ['**/*.spec.ts'],
     logHeapUsage: true,
     reporters: [...configDefaults.reporters, 'junit'],
     root: './',
+    setupFiles: ['./vitest.setup.ts'],
   },
 });

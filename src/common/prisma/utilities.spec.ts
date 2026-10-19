@@ -1,4 +1,4 @@
-import { Prisma } from '~prisma';
+import { Prisma } from '~prisma/client.js';
 import {
   isErrorCode,
   isRecordNotFoundError,
@@ -8,6 +8,7 @@ import {
 describe(isErrorCode.name, () => {
   it.each([
     { code: 'P2002', expected: true },
+    { code: 'P2017', expected: true },
     { code: 'P2025', expected: true },
     { code: 'other', expected: false },
   ])('$#: should expect code $code to be $expected', ({ code, expected }) => {
@@ -19,6 +20,7 @@ describe(isErrorCode.name, () => {
 
 describe.each([
   { code: 'P2002', fn: isUniqueConstraintViolation },
+  { code: 'P2017', fn: isRecordNotFoundError },
   { code: 'P2025', fn: isRecordNotFoundError },
 ])('$#: $fn.name', ({ code, fn }) => {
   it.each([
