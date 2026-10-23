@@ -33,12 +33,13 @@ describe(PrismaInfo.name, () => {
         responseTimeInMilliseconds: 1,
         status: 'up',
       } satisfies PrismaHealth;
-      prismaService.health = vi.fn().mockReturnValue(of(value));
+      const health = vi.fn().mockReturnValue(of(value));
+      prismaService.health = health;
 
       const result = await firstValueFrom(info.info());
 
       expect(result).toBe(value);
-      expect(prismaService.health).toHaveBeenCalledTimes(1);
+      expect(health).toHaveBeenCalledTimes(1);
     });
   });
 });

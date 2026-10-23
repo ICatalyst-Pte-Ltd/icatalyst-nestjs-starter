@@ -71,18 +71,16 @@ describe('EmailService', () => {
         html: '<html>This is a test email</html>',
       };
 
-      transportService.createTransporter = vi.fn().mockReturnValue({
-        sendMail: vi.fn().mockImplementation((mailOptions, callback) => {
-          callback(null, 'Email sent successfully');
-        }),
+      const sendMail = vi.fn().mockImplementation((mailOptions, callback) => {
+        callback(null, 'Email sent successfully');
       });
+      const createTransporter = vi.fn().mockReturnValue({ sendMail });
+      transportService.createTransporter = createTransporter;
 
       await lastValueFrom(service.sendMail(sendEmailDto));
 
-      expect(transportService.createTransporter).toHaveBeenCalledTimes(1);
-      expect(
-        transportService.createTransporter().sendMail,
-      ).toHaveBeenCalledWith(
+      expect(createTransporter).toHaveBeenCalledTimes(1);
+      expect(sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
           from: emailConfig.fromEmail,
           to: sendEmailDto.to,
@@ -110,18 +108,16 @@ describe('EmailService', () => {
         fileName: 'name',
       };
 
-      transportService.createTransporter = vi.fn().mockReturnValue({
-        sendMail: vi.fn().mockImplementation((mailOptions, callback) => {
-          callback(null, 'Email sent successfully');
-        }),
+      const sendMail = vi.fn().mockImplementation((mailOptions, callback) => {
+        callback(null, 'Email sent successfully');
       });
+      const createTransporter = vi.fn().mockReturnValue({ sendMail });
+      transportService.createTransporter = createTransporter;
 
       await lastValueFrom(service.sendMail(sendEmailDto, attachmentOptions));
 
-      expect(transportService.createTransporter).toHaveBeenCalledTimes(1);
-      expect(
-        transportService.createTransporter().sendMail,
-      ).toHaveBeenCalledWith(
+      expect(createTransporter).toHaveBeenCalledTimes(1);
+      expect(sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
           from: emailConfig.fromEmail,
           to: sendEmailDto.to,

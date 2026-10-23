@@ -11,15 +11,15 @@ interface ModuleTestFunctions {
    *
    * @param module the {@link TestingModule}.
    */
-  afterEachFn?(module: TestingModule): void | Promise<void>;
+  afterEachFn?: (module: TestingModule) => void | Promise<void>;
   /**
    * Additional code to run in the {@link beforeEach} block.
    *
    * @param builder the {@link TestingModuleBuilder}.
    */
-  beforeEachFn?(
+  beforeEachFn?: (
     builder: TestingModuleBuilder,
-  ): TestingModuleBuilder | Promise<TestingModuleBuilder>;
+  ) => TestingModuleBuilder | Promise<TestingModuleBuilder>;
 }
 
 /**

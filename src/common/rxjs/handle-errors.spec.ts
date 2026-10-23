@@ -1,18 +1,19 @@
+import type { Mock } from 'vitest';
 import { firstValueFrom, throwError } from 'rxjs';
 import { handleErrors } from './handle-errors.js';
 import { Logger } from '@nestjs/common';
 
 describe(handleErrors.name, () => {
   let logger: Logger;
+  let warn: Mock;
 
   // Sample methods for testing
   function getData() {}
   function postData() {}
 
   beforeEach(() => {
-    logger = {
-      warn: vi.fn(),
-    } as unknown as Logger;
+    warn = vi.fn();
+    logger = { warn } as unknown as Logger;
   });
 
   it.each([
@@ -43,8 +44,8 @@ describe(handleErrors.name, () => {
       const result = await firstValueFrom(observable);
 
       expect(result).toBe(expectedFallback);
-      expect(logger.warn).toHaveBeenCalledTimes(1);
-      expect(logger.warn).toHaveBeenCalledWith({
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith({
         method: method.name,
         message: message,
         error: {

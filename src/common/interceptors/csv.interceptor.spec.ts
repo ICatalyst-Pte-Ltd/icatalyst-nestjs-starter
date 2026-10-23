@@ -30,6 +30,8 @@ describe(CSVInterceptor.name, () => {
   let next: CallHandler<string>;
   let req: { headers: { [key: string]: string } };
   let res: Response & NodeJS.WritableStream;
+  let setHeader: Mock;
+  let status: Mock;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -46,8 +48,10 @@ describe(CSVInterceptor.name, () => {
     vi.spyOn(stream, 'write');
     vi.spyOn(stream, 'end');
 
-    res.setHeader = vi.fn();
-    res.status = vi.fn().mockReturnThis();
+    setHeader = vi.fn();
+    status = vi.fn().mockReturnThis();
+    res.setHeader = setHeader;
+    res.status = status;
     res.json = vi.fn();
 
     context = {
@@ -108,11 +112,8 @@ describe(CSVInterceptor.name, () => {
             interceptor.intercept(context, next);
             await setImmediate();
 
-            expect(res.setHeader).toHaveBeenCalledWith(
-              'Content-Type',
-              'text/csv',
-            );
-            expect(res.setHeader).toHaveBeenCalledWith(
+            expect(setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
+            expect(setHeader).toHaveBeenCalledWith(
               'Content-Disposition',
               'attachment; filename="test.csv"',
             );
@@ -130,7 +131,7 @@ describe(CSVInterceptor.name, () => {
       const result = await firstValueFrom(interceptor.intercept(context, next));
 
       expect(result).toBe(payload);
-      expect(res.setHeader).not.toHaveBeenCalled();
+      expect(setHeader).not.toHaveBeenCalled();
     });
 
     it('should use the statusCode and a default message of the error', async () => {
@@ -141,7 +142,7 @@ describe(CSVInterceptor.name, () => {
       interceptor.intercept(context, next);
       await setImmediate();
 
-      expect(res.status).toHaveBeenCalledWith(400);
+      expect(status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         errors: 'Internal error',
         statusCode: 400,
@@ -158,7 +159,7 @@ describe(CSVInterceptor.name, () => {
       interceptor.intercept(context, next);
       await setImmediate();
 
-      expect(res.status).not.toHaveBeenCalled();
+      expect(status).not.toHaveBeenCalled();
       expect(res.json).not.toHaveBeenCalled();
     });
 
@@ -171,12 +172,12 @@ describe(CSVInterceptor.name, () => {
       interceptor.intercept(context, next);
       await setImmediate();
 
-      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
-      expect(res.setHeader).toHaveBeenCalledWith(
+      expect(setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
+      expect(setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
         'attachment; filename="test.csv"',
       );
-      expect(res.status).toHaveBeenCalledWith(418);
+      expect(status).toHaveBeenCalledWith(418);
       expect(res.json).toHaveBeenCalledWith({
         errors: 'teapot',
         statusCode: 418,
@@ -191,7 +192,7 @@ describe(CSVInterceptor.name, () => {
       interceptor.intercept(context, next);
       await setImmediate();
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         errors: 'bang',
         statusCode: 500,

@@ -69,7 +69,8 @@ describe(handlePrismaErrors.name, () => {
   );
 
   it('should rethrow the Prisma error if the factory is removed', async () => {
-    logger.error = vi.fn();
+    const loggerError = vi.fn();
+    logger.error = loggerError;
     const error = new Prisma.PrismaClientKnownRequestError('message', {
       clientVersion: 'clientVersion',
       code: 'P2002',
@@ -80,14 +81,15 @@ describe(handlePrismaErrors.name, () => {
     );
 
     await expect(firstValueFrom(observable)).rejects.toBe(error);
-    expect(logger.error).toHaveBeenCalledWith({
+    expect(loggerError).toHaveBeenCalledWith({
       method: handlePrismaErrors.name,
       error,
     });
   });
 
   it('should handle unknown errors', async () => {
-    logger.error = vi.fn();
+    const loggerError = vi.fn();
+    logger.error = loggerError;
     const unknownError = new Error('unknown');
 
     const observable = throwError(() => unknownError).pipe(
@@ -95,8 +97,8 @@ describe(handlePrismaErrors.name, () => {
     );
 
     await expect(firstValueFrom(observable)).rejects.toBe(unknownError);
-    expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(logger.error).toHaveBeenCalledWith({
+    expect(loggerError).toHaveBeenCalledTimes(1);
+    expect(loggerError).toHaveBeenCalledWith({
       method: handlePrismaErrors.name,
       error: unknownError,
     });

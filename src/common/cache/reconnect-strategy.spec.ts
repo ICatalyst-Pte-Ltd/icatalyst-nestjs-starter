@@ -1,13 +1,14 @@
+import type { Mock } from 'vitest';
 import { Logger } from '@nestjs/common';
 import { reconnectStrategy } from './reconnect-strategy.js';
 
 describe(reconnectStrategy.name, () => {
   let strategy: (retries: number) => number;
-  let logger: Logger;
+  let log: Mock;
 
   beforeEach(() => {
-    logger = { log: vi.fn() } as unknown as Logger;
-    strategy = reconnectStrategy(logger);
+    log = vi.fn();
+    strategy = reconnectStrategy({ log } as unknown as Logger);
   });
 
   it.each([
@@ -22,7 +23,7 @@ describe(reconnectStrategy.name, () => {
       const result = strategy(retries);
 
       expect(result).toBe(delay);
-      expect(logger.log).toHaveBeenCalledWith({
+      expect(log).toHaveBeenCalledWith({
         computedDelayInMilliseconds: computed,
         delayInMilliseconds: delay,
         message: 'Reconnecting to Redis',
@@ -34,11 +35,11 @@ describe(reconnectStrategy.name, () => {
 
 describe('with custom delay values', () => {
   let strategy: (retries: number) => number;
-  let logger: Logger;
+  let log: Mock;
 
   beforeEach(() => {
-    logger = { log: vi.fn() } as unknown as Logger;
-    strategy = reconnectStrategy(logger, 500, 5000);
+    log = vi.fn();
+    strategy = reconnectStrategy({ log } as unknown as Logger, 500, 5000);
   });
 
   it.each([
@@ -53,7 +54,7 @@ describe('with custom delay values', () => {
       const result = strategy(retries);
 
       expect(result).toBe(delay);
-      expect(logger.log).toHaveBeenCalledWith({
+      expect(log).toHaveBeenCalledWith({
         computedDelayInMilliseconds: computed,
         delayInMilliseconds: delay,
         message: 'Reconnecting to Redis',

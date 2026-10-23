@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { Injectable } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Observable } from 'rxjs';
@@ -17,24 +18,24 @@ class TestInfo extends AbstractInfo {
 
 describe(AbstractInfo.name, () => {
   let info: TestInfo;
-  let registry: RegistryService;
+  let register: Mock;
 
   beforeEach(async () => {
+    register = vi.fn();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TestInfo,
-        { provide: RegistryService, useValue: { register: vi.fn() } },
+        { provide: RegistryService, useValue: { register } },
       ],
     }).compile();
 
     info = module.get(TestInfo);
-    registry = module.get(RegistryService);
   });
 
   it('should be defined', () => {
     expect(info).toBeDefined();
     expect(info.name).toBe('name');
-    expect(registry.register).toHaveBeenCalledTimes(1);
-    expect(registry.register).toHaveBeenCalledWith(info);
+    expect(register).toHaveBeenCalledTimes(1);
+    expect(register).toHaveBeenCalledWith(info);
   });
 });

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorResult } from '@nestjs/terminus';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -24,25 +25,25 @@ class TestIndicator extends AbstractHealthIndicator {
 
 describe(AbstractHealthIndicator.name, () => {
   let indicator: TestIndicator;
-  let indicators: HealthIndicatorsService;
+  let register: Mock;
 
   beforeEach(async () => {
+    register = vi.fn();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TestIndicator,
-        { provide: HealthIndicatorsService, useValue: { register: vi.fn() } },
+        { provide: HealthIndicatorsService, useValue: { register } },
       ],
     }).compile();
 
     indicator = module.get(TestIndicator);
-    indicators = module.get(HealthIndicatorsService);
   });
 
   it('should be defined', () => {
     expect(indicator).toBeDefined();
     expect(indicator.name).toBe('name');
-    expect(indicators.register).toHaveBeenCalledTimes(1);
-    expect(indicators.register).toHaveBeenCalledWith(indicator);
+    expect(register).toHaveBeenCalledTimes(1);
+    expect(register).toHaveBeenCalledWith(indicator);
   });
 
   describe('getStatus', () => {

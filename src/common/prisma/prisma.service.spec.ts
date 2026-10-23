@@ -52,27 +52,30 @@ describe(PrismaService.name, () => {
 
     describe(PrismaService.prototype.onModuleInit.name, () => {
       it('should connect', async () => {
-        vi.spyOn(service, '$connect').mockResolvedValue();
+        const $connect = vi.spyOn(service, '$connect').mockResolvedValue();
 
         await service.onModuleInit();
 
-        expect(service.$connect).toHaveBeenCalled();
+        expect($connect).toHaveBeenCalled();
       });
     });
 
     describe(PrismaService.prototype.onModuleDestroy.name, () => {
       it('should disconnect', async () => {
-        vi.spyOn(service, '$disconnect').mockResolvedValue();
+        const $disconnect = vi
+          .spyOn(service, '$disconnect')
+          .mockResolvedValue();
 
         await service.onModuleDestroy();
 
-        expect(service.$disconnect).toHaveBeenCalled();
+        expect($disconnect).toHaveBeenCalled();
       });
     });
 
     describe(PrismaService.prototype.health.name, () => {
       it('should return the health', async () => {
-        service.$queryRaw = vi.fn().mockResolvedValue({ id: randomUUID() });
+        const $queryRaw = vi.fn().mockResolvedValue({ id: randomUUID() });
+        service.$queryRaw = $queryRaw;
 
         const result = await firstValueFrom(service.health());
 
@@ -80,7 +83,7 @@ describe(PrismaService.name, () => {
           responseTimeInMilliseconds: expect.any(Number),
           status: 'up',
         });
-        expect(service.$queryRaw).toHaveBeenCalledWith(['SELECT 1;']);
+        expect($queryRaw).toHaveBeenCalledWith(['SELECT 1;']);
       });
 
       it('should handle errors', async () => {

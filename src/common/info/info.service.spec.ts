@@ -63,7 +63,10 @@ describe(InfoService.name, () => {
       const result = await firstValueFrom(observable);
 
       expect(result).toEqual({
-        ...info,
+        build: info.build,
+        ci: info.ci,
+        extensions: info.extensions,
+        git: info.git,
         name: 'app-name',
         url: 'https://localhost:3000',
       });

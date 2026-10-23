@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
 import {
@@ -19,27 +20,33 @@ import {
 
 describe(PaginationService.name, () => {
   let service: PaginationService;
-  let cursorPagination: CursorPaginationStrategy;
-  let offsetPagination: OffsetPaginationStrategy;
+  let cursorBuildPaginatedArgs: Mock;
+  let offsetBuildPaginatedArgs: Mock;
 
   beforeEach(async () => {
+    cursorBuildPaginatedArgs = vi.fn();
+    offsetBuildPaginatedArgs = vi.fn();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaginationService,
         {
           provide: CursorPaginationStrategy,
-          useValue: { name: 'cursor', buildPaginatedArgs: vi.fn() },
+          useValue: {
+            name: 'cursor',
+            buildPaginatedArgs: cursorBuildPaginatedArgs,
+          },
         },
         {
           provide: OffsetPaginationStrategy,
-          useValue: { name: 'offset', buildPaginatedArgs: vi.fn() },
+          useValue: {
+            name: 'offset',
+            buildPaginatedArgs: offsetBuildPaginatedArgs,
+          },
         },
       ],
     }).compile();
 
     service = module.get(PaginationService);
-    cursorPagination = module.get(CursorPaginationStrategy);
-    offsetPagination = module.get(OffsetPaginationStrategy);
   });
 
   it('should be defined', () => {
@@ -49,7 +56,7 @@ describe(PaginationService.name, () => {
   describe(PaginationService.prototype.buildPaginatedArgs.name, () => {
     it('should execute cursor pagination', () => {
       const value = { id: randomUUID() };
-      cursorPagination.buildPaginatedArgs = vi.fn().mockReturnValue(value);
+      cursorBuildPaginatedArgs.mockReturnValue(value);
       const args = { where: { id: randomUUID() } };
       const options = mockCursorPaginationOptions({});
       const strategy = {
@@ -63,8 +70,8 @@ describe(PaginationService.name, () => {
       });
 
       expect(result).toEqual(value);
-      expect(cursorPagination.buildPaginatedArgs).toHaveBeenCalledTimes(1);
-      expect(cursorPagination.buildPaginatedArgs).toHaveBeenCalledWith({
+      expect(cursorBuildPaginatedArgs).toHaveBeenCalledTimes(1);
+      expect(cursorBuildPaginatedArgs).toHaveBeenCalledWith({
         args,
         options,
       });
@@ -72,7 +79,7 @@ describe(PaginationService.name, () => {
 
     it('should execute offset pagination', () => {
       const value = { id: randomUUID() };
-      offsetPagination.buildPaginatedArgs = vi.fn().mockReturnValue(value);
+      offsetBuildPaginatedArgs.mockReturnValue(value);
       const args = { where: { id: randomUUID() } };
       const options = mockOffsetPaginationOptions({});
       const strategy = {
@@ -86,8 +93,8 @@ describe(PaginationService.name, () => {
       });
 
       expect(result).toEqual(value);
-      expect(offsetPagination.buildPaginatedArgs).toHaveBeenCalledTimes(1);
-      expect(offsetPagination.buildPaginatedArgs).toHaveBeenCalledWith({
+      expect(offsetBuildPaginatedArgs).toHaveBeenCalledTimes(1);
+      expect(offsetBuildPaginatedArgs).toHaveBeenCalledWith({
         args,
         options,
       });
@@ -106,8 +113,8 @@ describe(PaginationService.name, () => {
       });
 
       expect(result).toBe(args);
-      expect(cursorPagination.buildPaginatedArgs).not.toHaveBeenCalled();
-      expect(offsetPagination.buildPaginatedArgs).not.toHaveBeenCalled();
+      expect(cursorBuildPaginatedArgs).not.toHaveBeenCalled();
+      expect(offsetBuildPaginatedArgs).not.toHaveBeenCalled();
     });
   });
 

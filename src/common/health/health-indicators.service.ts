@@ -22,7 +22,7 @@ export class HealthIndicatorsService implements OnApplicationShutdown {
    *
    * @returns An instance of the {@link HealthIndicatorsService}.
    */
-  static getInstance(): HealthIndicatorsService {
+  static getInstance(this: void): HealthIndicatorsService {
     if (HealthIndicatorsService.instance === undefined) {
       HealthIndicatorsService.instance = new HealthIndicatorsService();
     }

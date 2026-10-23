@@ -1,7 +1,7 @@
 import { EMPTY, Observable, OperatorFunction, mergeMap } from 'rxjs';
 
 type ObservableFactory<T> = () => Observable<T>;
-type FactoryOrEmpty<T> = (value: boolean) => Observable<T | never>;
+type FactoryOrEmpty<T> = (value: boolean) => Observable<T>;
 
 /**
  * A convenience function that emits an observable produced by the

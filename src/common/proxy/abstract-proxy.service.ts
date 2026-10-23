@@ -7,6 +7,7 @@ import {
   RequestHandler,
   responseInterceptor,
 } from 'http-proxy-middleware';
+import { ParsedUrlQueryInput, stringify } from 'querystring';
 import { ProxyConfig } from './proxy.config.js';
 
 export class AbstractProxyService<
@@ -38,9 +39,7 @@ export class AbstractProxyService<
         replaced += '/';
       }
       if (req.query) {
-        const queryString = Object.entries(req.query)
-          .map(([key, value]) => `${key}=${value}`)
-          .join('&');
+        const queryString = stringify(req.query as ParsedUrlQueryInput);
         if (queryString) {
           replaced += `?${queryString}`;
         }

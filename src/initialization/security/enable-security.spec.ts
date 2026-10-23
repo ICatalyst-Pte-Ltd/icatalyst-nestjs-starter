@@ -3,10 +3,9 @@ import { enableSecurity } from './index.js';
 
 describe(enableSecurity.name, () => {
   it('should call the associated functions', () => {
-    const app = {
-      enableCors: vi.fn(),
-      use: vi.fn(),
-    } as unknown as INestApplication;
+    const enableCors = vi.fn();
+    const use = vi.fn();
+    const app = { enableCors, use } as unknown as INestApplication;
     const logger = {
       log: vi.fn(),
     } as unknown as Logger;
@@ -14,7 +13,7 @@ describe(enableSecurity.name, () => {
     const result = enableSecurity(app, logger);
 
     expect(result).toBe(app);
-    expect(app.use).toBeCalledTimes(1);
-    expect(app.enableCors).toBeCalledTimes(1);
+    expect(use).toBeCalledTimes(1);
+    expect(enableCors).toBeCalledTimes(1);
   });
 });

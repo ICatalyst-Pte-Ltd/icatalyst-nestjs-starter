@@ -4,7 +4,7 @@
     "editorconfig.editorconfig",
     "esbenp.prettier-vscode",
     "prisma.prisma",
-    "dbaeumer.vscode-eslint",
+    "oxc.oxc-vscode",
     "mikestead.dotenv",
     "gitlab.gitlab-workflow"
   ]

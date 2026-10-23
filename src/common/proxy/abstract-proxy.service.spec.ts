@@ -137,11 +137,12 @@ describe('proxy', () => {
             protocol: 'http',
             socket: { localPort: 3000 },
           } as unknown as Request;
+          const log = vi.spyOn(Logger.prototype, 'log');
 
           options.on.proxyReq(proxyReq, req);
 
           expect(hpm.fixRequestBody).toHaveBeenCalledWith(proxyReq, req);
-          expect(Logger.prototype.log).toHaveBeenCalledWith(
+          expect(log).toHaveBeenCalledWith(
             expect.objectContaining({
               from: 'GET http://localhost:3000/original',
               to: 'GET https://localhost:9000/path',

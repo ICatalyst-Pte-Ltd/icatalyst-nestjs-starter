@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { HttpService } from '@nestjs/axios';
 import { StreamableFile } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -15,19 +16,21 @@ function response<T>(data: T): AxiosResponse<T> {
 describe(GotenbergService.name, () => {
   const url = 'http://localhost:4000';
   let service: GotenbergService;
-  let http: HttpService;
+  let get: Mock;
+  let post: Mock;
 
   beforeEach(async () => {
+    get = vi.fn();
+    post = vi.fn();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GotenbergService,
         { provide: GotenbergConfig, useValue: { url } },
-        { provide: HttpService, useValue: { get: vi.fn(), post: vi.fn() } },
+        { provide: HttpService, useValue: { get, post } },
       ],
     }).compile();
 
     service = module.get(GotenbergService);
-    http = module.get(HttpService);
   });
 
   describe(GotenbergService.prototype.health.name, () => {
@@ -36,7 +39,7 @@ describe(GotenbergService.name, () => {
         details: { chromium: { status: 'up', timestamp: 'timestamp' } },
         status: 'up',
       };
-      vi.mocked(http.get).mockReturnValue(of(response(data)));
+      get.mockReturnValue(of(response(data)));
 
       const result = await firstValueFrom(service.health());
 
@@ -46,7 +49,7 @@ describe(GotenbergService.name, () => {
         responseTimeInMilliseconds: expect.any(Number),
         status: 'up',
       });
-      expect(http.get).toHaveBeenCalledWith(`${url}/health`);
+      expect(get).toHaveBeenCalledWith(`${url}/health`);
     });
 
     it('should be down if Gotenberg is down', async () => {
@@ -56,7 +59,7 @@ describe(GotenbergService.name, () => {
         },
         status: 'down',
       };
-      vi.mocked(http.get).mockReturnValue(of(response(data)));
+      get.mockReturnValue(of(response(data)));
 
       const result = await firstValueFrom(service.health());
 
@@ -80,7 +83,7 @@ describe(GotenbergService.name, () => {
           statusText: 'Service Unavailable',
         } as AxiosResponse,
       );
-      vi.mocked(http.get).mockReturnValue(throwError(() => error));
+      get.mockReturnValue(throwError(() => error));
 
       const result = await firstValueFrom(service.health());
 
@@ -103,7 +106,7 @@ describe(GotenbergService.name, () => {
 
     beforeEach(() => {
       stream = Readable.from(['%PDF']);
-      vi.mocked(http.post).mockReturnValue(
+      post.mockReturnValue(
         of({
           data: stream,
           headers: new AxiosHeaders(),
@@ -112,7 +115,7 @@ describe(GotenbergService.name, () => {
     });
 
     function postedForm(): FormData {
-      return vi.mocked(http.post).mock.lastCall![1] as FormData;
+      return post.mock.lastCall![1] as FormData;
     }
 
     describe(GotenbergService.prototype.convertUrl.name, () => {
@@ -125,7 +128,7 @@ describe(GotenbergService.name, () => {
           }),
         );
 
-        expect(http.post).toHaveBeenCalledWith(
+        expect(post).toHaveBeenCalledWith(
           `${url}/forms/chromium/convert/url`,
           expect.any(FormData),
           { responseType: 'stream' },
@@ -152,7 +155,7 @@ describe(GotenbergService.name, () => {
           service.convertHtml('<h1>Hello</h1>', { fileName: 'hello.pdf' }),
         );
 
-        expect(http.post).toHaveBeenCalledWith(
+        expect(post).toHaveBeenCalledWith(
           `${url}/forms/chromium/convert/html`,
           expect.any(FormData),
           { responseType: 'stream' },
