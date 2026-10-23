@@ -35,12 +35,13 @@ describe(initializeApp.name, () => {
   });
 
   it('should call the respective functions with provided logger', () => {
-    const logger = { log: vi.fn() } as unknown as Logger;
+    const log = vi.fn();
+    const logger = { log } as unknown as Logger;
 
     const result = initializeApp(app, logger);
 
     expect(result).toBe(app);
-    expect(logger.log).toBeCalledWith('Initializing application');
+    expect(log).toBeCalledWith('Initializing application');
     expect(mocks.enableSecurity).toBeCalledWith(app, logger);
     expect(mocks.enableVersioning).toBeCalledWith(app, logger);
     expect(mocks.enableSwagger).toBeCalledWith(app, logger);
@@ -49,13 +50,14 @@ describe(initializeApp.name, () => {
   });
 
   it('should call the respective functions with the default logger', () => {
-    Logger.prototype.log = vi.fn();
+    const log = vi.fn();
+    Logger.prototype.log = log;
 
     const result = initializeApp(app);
 
     expect(result).toBe(app);
 
-    expect(Logger.prototype.log).toBeCalledWith('Initializing application');
+    expect(log).toBeCalledWith('Initializing application');
     expect(mocks.enableSecurity).toBeCalledWith(
       app,
       expect.objectContaining({ context: 'Initialization' }),

@@ -1,4 +1,4 @@
-import type { Mock } from 'vitest';
+import type { Mock, MockInstance } from 'vitest';
 import KeyvRedis, { RedisClientType } from '@keyv/redis';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Logger } from '@nestjs/common';
@@ -18,6 +18,7 @@ describe(CacheModule.name, () => {
   const env = { ...process.env };
   let module: TestingModule;
   let cache: Cache;
+  let loggerError: MockInstance<Logger['error']>;
 
   async function compile(): Promise<void> {
     module = await Test.createTestingModule({
@@ -37,7 +38,8 @@ describe(CacheModule.name, () => {
   beforeEach(() => {
     process.env = { ...env, APP_URL: 'https://localhost:3000' };
     delete process.env.CACHE_TTL;
-    vi.mocked(Logger.prototype.error).mockClear();
+    loggerError = vi.spyOn(Logger.prototype, 'error');
+    loggerError.mockClear();
   });
 
   afterEach(async () => {
@@ -111,7 +113,7 @@ describe(CacheModule.name, () => {
     ])('$#: should log instead of emitting $description', ({ error }) => {
       getClient().emit('error', error);
 
-      expect(Logger.prototype.error).toHaveBeenCalledWith({
+      expect(loggerError).toHaveBeenCalledWith({
         method: `${getClient().constructor.name}.onError`,
         error,
       });
@@ -135,7 +137,7 @@ describe(CacheModule.name, () => {
       getClient().emit('error', error);
 
       expect(storeErrorListener).toHaveBeenCalledWith(error);
-      expect(Logger.prototype.error).not.toHaveBeenCalled();
+      expect(loggerError).not.toHaveBeenCalled();
     });
 
     it('should emit connection errors on the store if there is no reconnect strategy', () => {
@@ -147,7 +149,7 @@ describe(CacheModule.name, () => {
       client.emit('error', error);
 
       expect(storeErrorListener).toHaveBeenCalledWith(error);
-      expect(Logger.prototype.error).not.toHaveBeenCalled();
+      expect(loggerError).not.toHaveBeenCalled();
     });
   });
 });

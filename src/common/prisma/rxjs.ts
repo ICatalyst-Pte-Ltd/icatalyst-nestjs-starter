@@ -18,7 +18,9 @@ type ErrorFactories = {
 
 const defaultFactories: ErrorFactories = {
   [`${ErrorCodes.P2002}`]: (error) =>
-    new ConflictException(`Unique constraint violation: ${error.meta?.target}`),
+    new ConflictException(
+      `Unique constraint violation: ${String(error.meta?.target)}`,
+    ),
   [`${ErrorCodes.P2017}`]: () => new NotFoundException(),
   [`${ErrorCodes.P2025}`]: () => new NotFoundException(),
 };

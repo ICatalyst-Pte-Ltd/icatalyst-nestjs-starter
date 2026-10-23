@@ -121,7 +121,7 @@ export abstract class AbstractPrisma<
     return observable.pipe(
       tap((record) => {
         this.#logger.debug({
-          method: this.findMany,
+          method: this.findMany.name,
           model: this.delegate,
           record,
         });

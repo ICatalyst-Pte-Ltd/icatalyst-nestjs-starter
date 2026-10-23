@@ -5,7 +5,7 @@ export function handleErrors<T, A extends Array<unknown>, R>(
   logger: Logger,
   method: (...args: A) => R,
   message: string,
-  fallbackValue?: T | undefined, // Optional fallback value
+  fallbackValue?: T, // Optional fallback value
 ): OperatorFunction<T, T | undefined> {
   return catchError((error) => {
     logger.warn({

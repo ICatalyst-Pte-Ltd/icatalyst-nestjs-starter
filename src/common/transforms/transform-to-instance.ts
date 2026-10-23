@@ -12,7 +12,7 @@ export function toInstance<T>(
   Class: new () => T,
   value: unknown,
   { array = false }: TransformToInstanceOptions,
-): T | Array<T> | unknown {
+): unknown {
   if (typeof value === 'string' && isJSON(value)) {
     try {
       const json = JSON.parse(value);

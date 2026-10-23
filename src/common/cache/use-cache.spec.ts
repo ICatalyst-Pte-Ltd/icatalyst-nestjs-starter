@@ -79,7 +79,7 @@ describe(UseCache.name, () => {
           cache = cache;
 
           @UseCache()
-          testMethod() {
+          async testMethod() {
             return of(value);
           }
         }
@@ -105,7 +105,7 @@ describe(UseCache.name, () => {
           cache = cache;
 
           @UseCache()
-          testMethod() {
+          async testMethod() {
             return value;
           }
         }
@@ -132,7 +132,7 @@ describe(UseCache.name, () => {
           cache = cache;
 
           @UseCache(ttl)
-          testMethod() {
+          async testMethod() {
             return value;
           }
         }
@@ -158,7 +158,7 @@ describe(UseCache.name, () => {
           cache = cache;
 
           @UseCache()
-          testMethod() {
+          async testMethod() {
             return randomUUID();
           }
         }
@@ -180,7 +180,7 @@ describe(UseCache.name, () => {
           cache = cache;
 
           @UseCache()
-          testMethod() {
+          async testMethod() {
             return of(randomUUID());
           }
         }
@@ -201,7 +201,7 @@ describe(UseCache.name, () => {
           cache = { get: vi.fn() };
 
           @UseCache()
-          testMethod() {
+          async testMethod() {
             return value;
           }
         }

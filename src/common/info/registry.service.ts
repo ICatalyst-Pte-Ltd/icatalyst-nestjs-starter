@@ -17,7 +17,7 @@ export class RegistryService implements OnApplicationShutdown {
    *
    * @returns an instance of the {@link RegistryService}.
    */
-  static getInstance(): RegistryService {
+  static getInstance(this: void): RegistryService {
     if (RegistryService.instance === undefined) {
       RegistryService.instance = new RegistryService();
     }

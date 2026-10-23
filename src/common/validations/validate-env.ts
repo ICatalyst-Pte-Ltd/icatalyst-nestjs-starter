@@ -1,9 +1,6 @@
 import { AnySchema, Context } from 'joi';
 
-export function validateEnv<T>(
-  schema: AnySchema<T>,
-  context: Context | undefined = undefined,
-): T {
+export function validateEnv<T>(schema: AnySchema<T>, context?: Context): T {
   const { value, error } = schema.validate(process.env, {
     // allow unknown keys since the process.env contains many variables
     // otherwise, validation will result in errors

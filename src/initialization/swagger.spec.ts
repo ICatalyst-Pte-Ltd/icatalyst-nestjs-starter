@@ -1,27 +1,33 @@
+import type { Mock } from 'vitest';
 import { INestApplication, Logger } from '@nestjs/common';
 import { OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { enableSwagger } from './swagger.js';
 
 describe(enableSwagger.name, () => {
   let app: INestApplication;
-  let logger: Logger;
+  let createDocument: Mock;
   let document: OpenAPIObject;
+  let log: Mock;
+  let logger: Logger;
+  let setup: Mock;
 
   beforeEach(() => {
     app = {} as INestApplication;
-    logger = {} as Logger;
-    logger.log = vi.fn();
+    log = vi.fn();
+    logger = { log } as unknown as Logger;
     document = {} as OpenAPIObject;
-    SwaggerModule.createDocument = vi.fn().mockReturnValue(document);
-    SwaggerModule.setup = vi.fn();
+    createDocument = vi.fn().mockReturnValue(document);
+    setup = vi.fn();
+    SwaggerModule.createDocument = createDocument;
+    SwaggerModule.setup = setup;
   });
 
   it('should initialize Swagger', () => {
     const result = enableSwagger(app, logger);
 
     expect(result).toBe(app);
-    expect(logger.log).toBeCalledWith('Enabling Swagger');
-    expect(SwaggerModule.createDocument).toBeCalledWith(
+    expect(log).toBeCalledWith('Enabling Swagger');
+    expect(createDocument).toBeCalledWith(
       app,
       expect.objectContaining({
         components: {
@@ -46,7 +52,7 @@ describe(enableSwagger.name, () => {
         tags: [],
       }),
     );
-    expect(SwaggerModule.setup).toBeCalledWith('api', app, document, {
+    expect(setup).toBeCalledWith('api', app, document, {
       swaggerOptions: { tagsSorter: 'alpha' },
     });
   });

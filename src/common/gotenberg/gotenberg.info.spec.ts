@@ -33,12 +33,13 @@ describe(GotenbergInfo.name, () => {
         responseTimeInMilliseconds: 1,
         status: 'up',
       };
-      gotenberg.health = vi.fn().mockReturnValue(of(value));
+      const health = vi.fn().mockReturnValue(of(value));
+      gotenberg.health = health;
 
       const result = await firstValueFrom(info.info());
 
       expect(result).toBe(value);
-      expect(gotenberg.health).toHaveBeenCalledTimes(1);
+      expect(health).toHaveBeenCalledTimes(1);
     });
   });
 });

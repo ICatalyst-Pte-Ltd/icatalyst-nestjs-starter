@@ -82,7 +82,8 @@ describe(AbstractPrisma.name, () => {
 
       it('should call the PrismaService create() method', async () => {
         const value = { id: randomUUID() };
-        prismaService[delegate].create = vi.fn().mockResolvedValue(value);
+        const create = vi.fn().mockResolvedValue(value);
+        prismaService[delegate].create = create;
         const args = { data: { id: randomUUID() } } as T;
 
         const observable = wrapper.create(args);
@@ -90,8 +91,8 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toBe(value);
-        expect(prismaService[delegate].create).toHaveBeenCalledTimes(1);
-        expect(prismaService[delegate].create).toHaveBeenCalledWith(args);
+        expect(create).toHaveBeenCalledTimes(1);
+        expect(create).toHaveBeenCalledWith(args);
       });
     });
 
@@ -101,9 +102,10 @@ describe(AbstractPrisma.name, () => {
       it('should call the PrismaService createManyAndReturn()', async () => {
         const value = { id: randomUUID() };
         const mockCreatedRecords = [value, value];
-        prismaService[delegate].createManyAndReturn = vi
+        const createManyAndReturn = vi
           .fn()
           .mockResolvedValue(mockCreatedRecords);
+        prismaService[delegate].createManyAndReturn = createManyAndReturn;
         const args = {
           data: [{ id: randomUUID() }, { id: randomUUID() }],
         } as T;
@@ -113,12 +115,8 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toEqual(mockCreatedRecords);
-        expect(
-          prismaService[delegate].createManyAndReturn,
-        ).toHaveBeenCalledTimes(1);
-        expect(
-          prismaService[delegate].createManyAndReturn,
-        ).toHaveBeenCalledWith(args);
+        expect(createManyAndReturn).toHaveBeenCalledTimes(1);
+        expect(createManyAndReturn).toHaveBeenCalledWith(args);
       });
     });
 
@@ -132,11 +130,12 @@ describe(AbstractPrisma.name, () => {
           fn.mockResolvedValueOnce(value);
         });
         prismaService[delegate].create = fn;
-        prismaService.$transaction = vi
+        const $transaction = vi
           .fn()
           .mockImplementation((promises: ReadonlyArray<Promise<unknown>>) => {
             return Promise.all(promises);
           });
+        prismaService.$transaction = $transaction;
         const args = values.map(() => {
           return { data: { id: randomUUID() } } as T;
         });
@@ -146,17 +145,12 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toEqual(values);
-        expect(prismaService[delegate].create).toHaveBeenCalledTimes(
-          args.length,
-        );
+        expect(fn).toHaveBeenCalledTimes(args.length);
         args.forEach((value, index) => {
-          expect(prismaService[delegate].create).toHaveBeenNthCalledWith(
-            index + 1,
-            value,
-          );
+          expect(fn).toHaveBeenNthCalledWith(index + 1, value);
         });
-        expect(prismaService.$transaction).toHaveBeenCalledTimes(1);
-        expect(prismaService.$transaction).toHaveBeenCalledWith(
+        expect($transaction).toHaveBeenCalledTimes(1);
+        expect($transaction).toHaveBeenCalledWith(
           args.map(() => {
             return expect.any(Promise);
           }),
@@ -168,9 +162,11 @@ describe(AbstractPrisma.name, () => {
       type T = Prisma.Args<PrismaClient[typeof delegate], 'findMany'>;
 
       it('should call the PrismaService findMany() method', async () => {
-        paginationService.buildPaginatedArgs = vi.fn();
+        const buildPaginatedArgs = vi.fn();
+        paginationService.buildPaginatedArgs = buildPaginatedArgs;
         const values = [{ id: randomUUID() }, { id: randomUUID() }];
-        prismaService[delegate].findMany = vi.fn().mockResolvedValue(values);
+        const findMany = vi.fn().mockResolvedValue(values);
+        prismaService[delegate].findMany = findMany;
         const args = { where: { id: randomUUID() } } as T;
 
         const observable = wrapper.findMany(args);
@@ -178,16 +174,17 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toBe(values);
-        expect(paginationService.buildPaginatedArgs).not.toHaveBeenCalled();
-        expect(prismaService[delegate].findMany).toHaveBeenCalledTimes(1);
-        expect(prismaService[delegate].findMany).toHaveBeenCalledWith(args);
+        expect(buildPaginatedArgs).not.toHaveBeenCalled();
+        expect(findMany).toHaveBeenCalledTimes(1);
+        expect(findMany).toHaveBeenCalledWith(args);
       });
 
       it.each([{ args: { where: { id: randomUUID() } } }, { args: undefined }])(
         '$#: should set the orderBy: args=$args',
         async ({ args }) => {
           const values = [{ id: randomUUID() }, { id: randomUUID() }];
-          prismaService[delegate].findMany = vi.fn().mockResolvedValue(values);
+          const findMany = vi.fn().mockResolvedValue(values);
+          prismaService[delegate].findMany = findMany;
           const options = {
             orderBy: [{ id: 'asc' }, { id: 'desc' }],
           } satisfies FindManyOptions;
@@ -197,8 +194,8 @@ describe(AbstractPrisma.name, () => {
           const result = await firstValueFrom(observable);
 
           expect(result).toEqual(values);
-          expect(prismaService[delegate].findMany).toHaveBeenCalledTimes(1);
-          expect(prismaService[delegate].findMany).toHaveBeenCalledWith({
+          expect(findMany).toHaveBeenCalledTimes(1);
+          expect(findMany).toHaveBeenCalledWith({
             ...args,
             orderBy: options.orderBy,
           });
@@ -207,9 +204,11 @@ describe(AbstractPrisma.name, () => {
 
       it('should call the pagination strategy', async () => {
         const value = { id: randomUUID() };
-        paginationService.buildPaginatedArgs = vi.fn().mockReturnValue(value);
+        const buildPaginatedArgs = vi.fn().mockReturnValue(value);
+        paginationService.buildPaginatedArgs = buildPaginatedArgs;
         const values = [{ id: randomUUID() }, { id: randomUUID() }];
-        prismaService[delegate].findMany = vi.fn().mockResolvedValue(values);
+        const findMany = vi.fn().mockResolvedValue(values);
+        prismaService[delegate].findMany = findMany;
         const args = { where: { id: randomUUID() } };
         const options = {
           pagination: {
@@ -223,13 +222,13 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toEqual(values);
-        expect(paginationService.buildPaginatedArgs).toHaveBeenCalledTimes(1);
-        expect(paginationService.buildPaginatedArgs).toHaveBeenCalledWith({
+        expect(buildPaginatedArgs).toHaveBeenCalledTimes(1);
+        expect(buildPaginatedArgs).toHaveBeenCalledWith({
           args,
           strategy: options.pagination,
         });
-        expect(prismaService[delegate].findMany).toHaveBeenCalledTimes(1);
-        expect(prismaService[delegate].findMany).toHaveBeenCalledWith(value);
+        expect(findMany).toHaveBeenCalledTimes(1);
+        expect(findMany).toHaveBeenCalledWith(value);
       });
     });
 
@@ -238,7 +237,8 @@ describe(AbstractPrisma.name, () => {
 
       it('should call the PrismaService findUnique() method', async () => {
         const value = { id: randomUUID() };
-        prismaService[delegate].findUnique = vi.fn().mockResolvedValue(value);
+        const findUnique = vi.fn().mockResolvedValue(value);
+        prismaService[delegate].findUnique = findUnique;
         const args = { where: { id: randomUUID() } } as T;
 
         const observable = wrapper.findUnique(args);
@@ -246,8 +246,8 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toBe(value);
-        expect(prismaService[delegate].findUnique).toHaveBeenCalledTimes(1);
-        expect(prismaService[delegate].findUnique).toHaveBeenCalledWith(args);
+        expect(findUnique).toHaveBeenCalledTimes(1);
+        expect(findUnique).toHaveBeenCalledWith(args);
       });
     });
 
@@ -256,9 +256,8 @@ describe(AbstractPrisma.name, () => {
 
       it('should call the PrismaService findUniqueOrThrow() method', async () => {
         const value = { id: randomUUID() };
-        prismaService[delegate].findUniqueOrThrow = vi
-          .fn()
-          .mockResolvedValue(value);
+        const findUniqueOrThrow = vi.fn().mockResolvedValue(value);
+        prismaService[delegate].findUniqueOrThrow = findUniqueOrThrow;
         const args = { where: { id: randomUUID() } } as T;
 
         const observable = wrapper.findUniqueOrThrow(args);
@@ -266,12 +265,8 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toBe(value);
-        expect(prismaService[delegate].findUniqueOrThrow).toHaveBeenCalledTimes(
-          1,
-        );
-        expect(prismaService[delegate].findUniqueOrThrow).toHaveBeenCalledWith(
-          args,
-        );
+        expect(findUniqueOrThrow).toHaveBeenCalledTimes(1);
+        expect(findUniqueOrThrow).toHaveBeenCalledWith(args);
       });
     });
 
@@ -280,7 +275,8 @@ describe(AbstractPrisma.name, () => {
 
       it('should call the PrismaService update() method', async () => {
         const value = { id: randomUUID() };
-        prismaService[delegate].update = vi.fn().mockResolvedValue(value);
+        const update = vi.fn().mockResolvedValue(value);
+        prismaService[delegate].update = update;
         const args = {
           data: { id: randomUUID() },
           where: { id: randomUUID() },
@@ -291,8 +287,8 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toBe(value);
-        expect(prismaService[delegate].update).toHaveBeenCalledTimes(1);
-        expect(prismaService[delegate].update).toHaveBeenCalledWith(args);
+        expect(update).toHaveBeenCalledTimes(1);
+        expect(update).toHaveBeenCalledWith(args);
       });
     });
 
@@ -301,7 +297,8 @@ describe(AbstractPrisma.name, () => {
 
       it('should call the PrismaService upsert() method', async () => {
         const value = { id: randomUUID() };
-        prismaService[delegate].upsert = vi.fn().mockResolvedValue(value);
+        const upsert = vi.fn().mockResolvedValue(value);
+        prismaService[delegate].upsert = upsert;
         const args = {
           create: { name: 'name' },
           update: { name: 'new name' },
@@ -313,8 +310,8 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toBe(value);
-        expect(prismaService[delegate].upsert).toHaveBeenCalledTimes(1);
-        expect(prismaService[delegate].upsert).toHaveBeenCalledWith(args);
+        expect(upsert).toHaveBeenCalledTimes(1);
+        expect(upsert).toHaveBeenCalledWith(args);
       });
     });
 
@@ -323,7 +320,8 @@ describe(AbstractPrisma.name, () => {
 
       it('should call the PrismaService delete() method', async () => {
         const value = { id: randomUUID() };
-        prismaService[delegate].delete = vi.fn().mockResolvedValue(value);
+        const deleteFn = vi.fn().mockResolvedValue(value);
+        prismaService[delegate].delete = deleteFn;
         const args = { where: { id: randomUUID() } } as T;
 
         const observable = wrapper.delete(args);
@@ -331,8 +329,8 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toBe(value);
-        expect(prismaService[delegate].delete).toHaveBeenCalledTimes(1);
-        expect(prismaService[delegate].delete).toHaveBeenCalledWith(args);
+        expect(deleteFn).toHaveBeenCalledTimes(1);
+        expect(deleteFn).toHaveBeenCalledWith(args);
       });
     });
 
@@ -346,11 +344,12 @@ describe(AbstractPrisma.name, () => {
           fn.mockResolvedValueOnce(value);
         });
         prismaService[delegate].delete = fn;
-        prismaService.$transaction = vi
+        const $transaction = vi
           .fn()
           .mockImplementation((promises: ReadonlyArray<Promise<unknown>>) => {
             return Promise.all(promises);
           });
+        prismaService.$transaction = $transaction;
         const args: ReadonlyArray<T> = values.map((value) => ({
           where: { id: value.id },
         })) as ReadonlyArray<T>;
@@ -360,17 +359,12 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toEqual(values);
-        expect(prismaService[delegate].delete).toHaveBeenCalledTimes(
-          args.length,
-        );
+        expect(fn).toHaveBeenCalledTimes(args.length);
         args.forEach((value, index) => {
-          expect(prismaService[delegate].delete).toHaveBeenNthCalledWith(
-            index + 1,
-            value,
-          );
+          expect(fn).toHaveBeenNthCalledWith(index + 1, value);
         });
-        expect(prismaService.$transaction).toHaveBeenCalledTimes(1);
-        expect(prismaService.$transaction).toHaveBeenCalledWith(
+        expect($transaction).toHaveBeenCalledTimes(1);
+        expect($transaction).toHaveBeenCalledWith(
           args.map(() => {
             return expect.any(Promise);
           }),
@@ -381,7 +375,8 @@ describe(AbstractPrisma.name, () => {
     describe(AbstractPrisma.prototype.count.name, () => {
       it('should call the PrismaService count() method', async () => {
         const value = { id: randomUUID() };
-        prismaService[delegate].count = vi.fn().mockResolvedValue(value);
+        const count = vi.fn().mockResolvedValue(value);
+        prismaService[delegate].count = count;
         const args = { where: { id: randomUUID() } };
 
         const observable = wrapper.count(args);
@@ -389,8 +384,8 @@ describe(AbstractPrisma.name, () => {
         const result = await firstValueFrom(observable);
 
         expect(result).toBe(value);
-        expect(prismaService[delegate].count).toHaveBeenCalledTimes(1);
-        expect(prismaService[delegate].count).toHaveBeenCalledWith(args);
+        expect(count).toHaveBeenCalledTimes(1);
+        expect(count).toHaveBeenCalledWith(args);
       });
     });
   });

@@ -19,6 +19,8 @@ describe(StreamInterceptor.name, () => {
   let next: CallHandler<unknown>;
   let req: { headers: { [key: string]: string } };
   let res: Response & NodeJS.WritableStream;
+  let setHeader: Mock;
+  let status: Mock;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,8 +37,10 @@ describe(StreamInterceptor.name, () => {
     vi.spyOn(stream, 'write');
     vi.spyOn(stream, 'end');
 
-    res.setHeader = vi.fn();
-    res.status = vi.fn().mockReturnThis();
+    setHeader = vi.fn();
+    status = vi.fn().mockReturnThis();
+    res.setHeader = setHeader;
+    res.status = status;
     res.json = vi.fn();
 
     context = {
@@ -78,18 +82,15 @@ describe(StreamInterceptor.name, () => {
           expect(result).toBe(payload);
         } else {
           expect(result).toBeUndefined();
-          expect(res.setHeader).toHaveBeenCalledWith(
+          expect(setHeader).toHaveBeenCalledWith(
             'Content-Type',
             'application/x-ndjson',
           );
-          expect(res.setHeader).toHaveBeenCalledWith(
+          expect(setHeader).toHaveBeenCalledWith(
             'Transfer-Encoding',
             'chunked',
           );
-          expect(res.setHeader).toHaveBeenCalledWith(
-            'Cache-Control',
-            'no-cache',
-          );
+          expect(setHeader).toHaveBeenCalledWith('Cache-Control', 'no-cache');
           expect(res.write).toHaveBeenCalledWith(
             JSON.stringify(payload) + '\n',
           );
@@ -105,7 +106,7 @@ describe(StreamInterceptor.name, () => {
       const result = await firstValueFrom(interceptor.intercept(context, next));
 
       expect(result).toBe(payload);
-      expect(res.setHeader).not.toHaveBeenCalled();
+      expect(setHeader).not.toHaveBeenCalled();
     });
 
     it('should use the statusCode and a default message of the error', async () => {
@@ -116,7 +117,7 @@ describe(StreamInterceptor.name, () => {
       await firstValueFrom(interceptor.intercept(context, next));
       await setImmediate();
 
-      expect(res.status).toHaveBeenCalledWith(400);
+      expect(status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         errors: 'Internal error',
         statusCode: 400,
@@ -134,7 +135,7 @@ describe(StreamInterceptor.name, () => {
       await firstValueFrom(interceptor.intercept(context, next));
       await setImmediate();
 
-      expect(res.status).not.toHaveBeenCalled();
+      expect(status).not.toHaveBeenCalled();
       expect(res.json).not.toHaveBeenCalled();
       expect(res.end).toHaveBeenCalled();
     });
@@ -150,11 +151,11 @@ describe(StreamInterceptor.name, () => {
       await setImmediate();
 
       expect(result).toBeUndefined();
-      expect(res.setHeader).toHaveBeenCalledWith(
+      expect(setHeader).toHaveBeenCalledWith(
         'Content-Type',
         'application/x-ndjson',
       );
-      expect(res.status).toHaveBeenCalledWith(418);
+      expect(status).toHaveBeenCalledWith(418);
       expect(res.json).toHaveBeenCalledWith({
         errors: 'teapot',
         statusCode: 418,
@@ -171,7 +172,7 @@ describe(StreamInterceptor.name, () => {
       await setImmediate();
 
       expect(result).toBeUndefined();
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         errors: 'oops',
         statusCode: 500,
