@@ -9,6 +9,9 @@ export default defineConfig({
     node: true,
   },
   ignorePatterns: ['**/coverage/', '**/dist/', '**/src/generated/'],
+  options: {
+    typeAware: true,
+  },
   rules: {
     'no-array-constructor': 'error',
     'no-case-declarations': 'error',
