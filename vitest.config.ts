@@ -6,8 +6,15 @@ export default defineConfig({
   test: {
     coverage: {
       enabled: true,
-      exclude: ['src/generated/**', '**/*.utils.spec.ts'],
-      reporter: [...(configDefaults.coverage.reporter ?? []), 'cobertura'],
+      exclude: ['**/*.utils.spec.ts', '**/generated/**', '**/index.ts'],
+      reporter: [
+        ...(configDefaults.coverage.reporter
+          ? Array.isArray(configDefaults.coverage.reporter)
+            ? configDefaults.coverage.reporter
+            : [configDefaults.coverage.reporter]
+          : []),
+        'cobertura',
+      ],
       thresholds: {
         // decorator metadata emits a branch per injected constructor parameter
         // that cannot be covered by tests
@@ -15,11 +22,9 @@ export default defineConfig({
         statements: 95,
       },
     },
-    environment: 'node',
     // *.utils.spec.ts files contain reusable test utilities, not tests
     exclude: [...configDefaults.exclude, '**/*.utils.spec.ts'],
     globals: true,
-    include: ['**/*.spec.ts'],
     logHeapUsage: true,
     reporters: [...configDefaults.reporters, 'junit'],
     root: './',
