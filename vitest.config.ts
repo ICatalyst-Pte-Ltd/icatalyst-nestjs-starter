@@ -7,6 +7,7 @@ export default defineConfig({
     coverage: {
       enabled: true,
       exclude: ['**/*.utils.spec.ts', '**/generated/**', '**/index.ts'],
+      include: ['src/**/*.ts'],
       reporter: [
         ...(configDefaults.coverage.reporter
           ? Array.isArray(configDefaults.coverage.reporter)
