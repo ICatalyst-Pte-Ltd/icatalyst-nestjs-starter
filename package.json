@@ -68,7 +68,7 @@
     "dotenv-expand": "^1000.0.0",
     "helmet": "^8.3.0",
     "http-proxy-middleware": "^4.2.0",
-    "joi": "^18.3.0",
+    "joi": "^18.3.1",
     "jsonwebtoken": "^9.0.0",
     "jwks-rsa": "^4.1.0",
     "keyv": "^6.1.0",
